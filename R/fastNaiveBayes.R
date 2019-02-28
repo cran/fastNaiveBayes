@@ -1,0 +1,19 @@
+#' fastNaiveBayes
+#'
+#' Extremely fast implementation of a Naive Bayes classifier. The package currently supports
+#' a Bernoulli distribution, a Multinomial distribution, and a Gaussian distribution, making it suitable for
+#' both binary features, frequency counts, and numerical features.
+#' Only numerical variables are allowed, however, categorical variables can be transformed into dummies
+#' and used with the Bernoulli distribution.
+#'
+#' This implementation offers a huge performance gain compared to the 'e1071' implementation in R.
+#' The execution times were compared on a data set of tweets and was found to be 331 times faster. See the vignette for more
+#' details. This performance gain is only realized using a Bernoulli event model. Furthermore, the Multinomial event model
+#' is equally fast and available in contrast to 'e1071'
+#'
+#' For a complete list of functions, use library(help = "fastNaiveBayes").
+#'
+#' @docType package
+#' @name fastNaiveBayes
+#' @import Matrix
+NULL
