@@ -1,17 +1,28 @@
+fastNaiveBayes
+==============
+
+[![CRAN status](https://www.r-pkg.org/badges/version/fastNaiveBayes)](https://cran.r-project.org/package=fastNaiveBayes) [![Travis build status](https://travis-ci.org/mskogholt/fastNaiveBayes.svg?branch=master)](https://travis-ci.org/mskogholt/fastNaiveBayes)
+
 Overview
 --------
 
-This is a very fast implementation of the Naive Bayes classifier in R. It has the fastest execution time of any other Naive Bayes implementation in R. It's also the only implementation that makes it possible to use either a Bernoulli distribution or a multinomial distribution for the features.
+This is an extremely fast implementation of a Naive Bayes classifier. This package is currently the only package that supports a Bernoulli distribution, a Multinomial distribution, and a Gaussian distribution, making it suitable for both binary features, frequency counts, and numerical features. Another unique feature is the support of a mix of different event models. Only numerical variables are allowed, however, categorical variables can be transformed into dummies and used with the Bernoulli distribution. This implementation offers a huge performance gain compared to the 'e1071' implementation in R. The execution times were compared on a data set of tweets and was found to be around 330 times faster. See the vignette for more details. This performance gain is only realized using a Bernoulli event model. Furthermore, the Multinomial event model implementation is even slightly faster, but incomparable since it was not implemented in 'e1071'. The implementation is largely based on the paper "A comparison of event models for Naive Bayes anti-spam e-mail filtering" written by K.M. Schneider (2003).
+
+Any issues can be submitted to: <https://github.com/mskogholt/fastNaiveBayes/issues>
 
 Installation
 ------------
 
-Development Version
--------------------
-
-To get the development version, you can install this package directly from Github
+Install the package with:
 
 ``` r
+install.packages("fastNaiveBayes")
+```
+
+Or install the development version using [devtools](https://github.com/hadley/devtools) with:
+
+``` r
+library(devtools)
 devtools::install_github("mskogholt/fastNaiveBayes")
 ```
 
