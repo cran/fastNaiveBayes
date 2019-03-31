@@ -1,225 +1,78 @@
 context("Test fastNaiveBayes Mixed Training Function")
 
 test_that("Mixed event models estimation gives expected results when mixed", {
-  y <- as.factor(c('Ham','Ham','Spam','Spam','Spam'))
+  real_probs <- matrix(c(
+    0.9535044256,
+    0.9999633454,
+    0.0009301696,
+    0.1435557348,
+    0.0009301696,
+    1-0.9535044256,
+    1-0.9999633454,
+    1-0.0009301696,
+    1-0.1435557348,
+    1-0.0009301696
+  ), nrow = 5, ncol = 2)
 
-  x1 <- matrix(c(2,3,0,1,0,5,3,0,2,0,0,1,3,1,0,0,0,4,3,5),
-              nrow = 5, ncol = 4)
-  colnames(x1) <- c('wo','mo','bo','so')
+  y <- as.factor(c("Ham", "Ham", "Spam", "Spam", "Spam"))
 
-  x2 <- matrix(c(1,0,0,0,0,1,1,0,1,0,0,1,1,1,0,0,0,1,1,1),
-              nrow = 5, ncol = 4)
-  colnames(x2) <- c('no','ko','po','lo')
+  x1 <- matrix(c(2, 3, 2, 4, 3), nrow = 5, ncol = 1)
+  colnames(x1) <- c("wo")
 
-  x <- cbind(x1,x2)
-  col_names <- c('wo','mo','bo','so','no','ko','po','lo')
+  x2 <- matrix(c(1, 0, 1, 0, 1), nrow = 5, ncol = 1)
+  colnames(x2) <- c("no")
+
+  x3 <- matrix(c(2.8, 2.7, 3.0, 2.9, 3.0), nrow = 5, ncol = 1)
+  colnames(x3) <- c("go")
+
+  x <- cbind(x1, x2, x3)
+  col_names <- c("wo", "no", "go")
   colnames(x) <- col_names
+  x <- as.data.frame(x)
 
-  # Standard Multinomial model test with laplace = 0
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 0, sparse = FALSE,
-                                    distribution = list(multinomial = colnames(x1),
-                                                        bernoulli = colnames(x2)))
-  mult_mod <- mixed_mod[[1]][[1]]
-  bern_mod <- mixed_mod[[1]][[2]]
-
-  expect_equal(mixed_mod$names, col_names)
-
-  expect_equal(mixed_mod$priors[[1]], 0.4)
-  expect_equal(mixed_mod$priors[[2]], 0.6)
-
-  expect_equal(mixed_mod$distribution, list(multinomial = colnames(x1),
-                                            bernoulli = colnames(x2)))
-
-  mod <- fastNaiveBayes.bernoulli(x2, y, laplace = 0, sparse = FALSE)
-
-  expect_equal(mod$priors,bern_mod$priors)
-  expect_equal(mod$probability_table$present, bern_mod$probability_table$present)
-  expect_equal(mod$probability_table$non_present, bern_mod$probability_table$non_present)
-
-  mod <- fastNaiveBayes.multinomial(x1, y, laplace = 0, sparse = FALSE)
-
-  expect_equal(mod$names,mult_mod$names)
-  expect_equal(mod$priors,mult_mod$priors)
-  expect_equal(mod$probability_table$present, mult_mod$probability_table$present)
-})
-
-test_that("Mixed event models estimation gives expected results with Gaussian model", {
-  y <- as.factor(c('Ham','Ham','Spam','Spam','Spam'))
-  x <- matrix(c(2,3,0,1,0,5,3,0,2,0,0,1,3,1,0,0,0,4,3,5),
-              nrow = 5, ncol = 4)
-  col_names <- c('wo','mo','bo','so')
-  colnames(x) <- col_names
-
-  # Standard Multinomial model test with laplace = 0
-  mod <- fastNaiveBayes.gaussian(x, y, laplace = 0, sparse = FALSE)
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 0, sparse = FALSE, distribution = list(gaussian=colnames(x)))
-  bern_mod <- mixed_mod[[1]][[1]]
-
-  expect_equal(mod$names,bern_mod$names)
-
-  expect_equal(mod$priors,bern_mod$priors)
-
-  expect_equal(mod$probability_table[[1]]$level, bern_mod$probability_table[[1]]$level)
-  expect_equal(mod$probability_table[[1]]$means, bern_mod$probability_table[[1]]$means)
-  expect_equal(mod$probability_table[[1]]$stddev, bern_mod$probability_table[[1]]$stddev)
-
-  expect_equal(mod$probability_table[[2]]$level, bern_mod$probability_table[[2]]$level)
-  expect_equal(mod$probability_table[[2]]$means, bern_mod$probability_table[[2]]$means)
-  expect_equal(mod$probability_table[[2]]$stddev, bern_mod$probability_table[[2]]$stddev)
-
-  # Standard bernoulli model test with laplace = 1
-  mod <- fastNaiveBayes.gaussian(x, y, laplace = 1, sparse = FALSE)
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 1, sparse = FALSE, distribution = list(gaussian=colnames(x)))
-  bern_mod <- mixed_mod[[1]][[1]]
-
-  expect_equal(mod$names,bern_mod$names)
-
-  expect_equal(mod$priors,bern_mod$priors)
-
-  expect_equal(mod$probability_table[[1]]$level, bern_mod$probability_table[[1]]$level)
-  expect_equal(mod$probability_table[[1]]$means, bern_mod$probability_table[[1]]$means)
-  expect_equal(mod$probability_table[[1]]$stddev, bern_mod$probability_table[[1]]$stddev)
-
-  expect_equal(mod$probability_table[[2]]$level, bern_mod$probability_table[[2]]$level)
-  expect_equal(mod$probability_table[[2]]$means, bern_mod$probability_table[[2]]$means)
-  expect_equal(mod$probability_table[[2]]$stddev, bern_mod$probability_table[[2]]$stddev)
-
-  # Standard bernoulli model test with laplace = 1 & Sparse
-  mod <- fastNaiveBayes.gaussian(x, y, laplace = 1, sparse = TRUE)
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 1, sparse = TRUE, distribution = list(gaussian=colnames(x)))
-  bern_mod <- mixed_mod[[1]][[1]]
-
-  expect_equal(mod$names,bern_mod$names)
-
-  expect_equal(mod$priors,bern_mod$priors)
-
-  expect_equal(mod$probability_table[[1]]$level, bern_mod$probability_table[[1]]$level)
-  expect_equal(mod$probability_table[[1]]$means, bern_mod$probability_table[[1]]$means)
-  expect_equal(mod$probability_table[[1]]$stddev, bern_mod$probability_table[[1]]$stddev)
-
-  expect_equal(mod$probability_table[[2]]$level, bern_mod$probability_table[[2]]$level)
-  expect_equal(mod$probability_table[[2]]$means, bern_mod$probability_table[[2]]$means)
-  expect_equal(mod$probability_table[[2]]$stddev, bern_mod$probability_table[[2]]$stddev)
-
-
-
-  y <- as.factor(c('Ham','Ham','Spam','Spam','Spam'))
-
-  x1 <- matrix(c(2,3,0,1,0,5,3,0,2,0,0,1,3,1,0,1,0,4,3,5),
-               nrow = 5, ncol = 4)
-  colnames(x1) <- c('wo','mo','bo','so')
-
-  x2 <- matrix(c(1,0,0,0,0,1,1,0,1,0,0,1,1,1,0,0,0,1,1,1),
-               nrow = 5, ncol = 4)
-  colnames(x2) <- c('no','ko','po','lo')
-
-  x <- cbind(x1,x2)
-  col_names <- c('wo','mo','bo','so','no','ko','po','lo')
-  colnames(x) <- col_names
-
-  # Standard Multinomial model test with laplace = 0
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 1, sparse = FALSE,
-                                    distribution = list(multinomial = colnames(x1),
-                                                        bernoulli = colnames(x2)))
+  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 0, sparse = FALSE)
+  mixed_sparse_mod <- fastNaiveBayes.mixed(Matrix(as.matrix(x), sparse = TRUE), y, laplace = 0)
+  mixed_sparse_cast_mod <- fastNaiveBayes.mixed(x, y, laplace = 0, sparse = TRUE)
 
   preds <- predict(mixed_mod, newdata = x, type = "raw")
+  sparse_preds <- predict(mixed_sparse_mod, newdata = x, sparse = TRUE, type = "raw")
+  sparse_cast_preds <- predict(mixed_sparse_cast_mod, newdata = Matrix(as.matrix(x), sparse = TRUE), type = "raw")
 
-  bern <- fastNaiveBayes.bernoulli(x2, y, laplace = 1, sparse = FALSE)
-  mult <- fastNaiveBayes.multinomial(x1, y, laplace = 1, sparse = FALSE)
+  expect_equal(sum(round(abs(real_probs - preds), digits = 7)), 0)
+  expect_equal(sum(abs(preds - sparse_preds)), 0)
+  expect_equal(sum(abs(preds - sparse_cast_preds)), 0)
+  expect_equal(sum(y!=predict(mixed_mod, newdata = x, type = "class")),0)
 
-  temp_probs <- exp(predict(bern, newdata = x2, type = "rawprob") +
-    predict(mult, newdata = x1, type = "rawprob"))
-  temp_probs[,1] <- temp_probs[,1]*0.4
-  temp_probs[,2] <- temp_probs[,2]*0.6
-  expect_equal(sum(abs(temp_probs/rowSums(temp_probs)-preds)),0)
-})
+  x <- x[,1:3]
+  frame_preds <- predict(mixed_mod, newdata = x, type = 'raw')
 
-test_that("Mixed event models estimation gives expected results with Multinomial model", {
-  y <- as.factor(c('Ham','Ham','Spam','Spam','Spam'))
-  x <- matrix(c(2,3,0,1,0,5,3,0,2,0,0,1,3,1,0,0,0,4,3,5),
-              nrow = 5, ncol = 4)
-  col_names <- c('wo','mo','bo','so')
-  colnames(x) <- col_names
+  x <- Matrix(as.matrix(x), sparse = TRUE)
+  newframe_preds <- predict(mixed_mod, newdata = x, type = 'raw')
 
-  # Standard Multinomial model test with laplace = 0
-  mod <- fastNaiveBayes.multinomial(x, y, laplace = 0, sparse = FALSE)
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 0, sparse = FALSE, distribution = list(multinomial=colnames(x)))
-  bern_mod <- mixed_mod[[1]][[1]]
+  expect_equal(sum(abs(newframe_preds-frame_preds)),0)
+  expect_error(mixed_mod(x[1:3,], y))
 
-  expect_equal(mod$names,bern_mod$names)
+  y <- as.factor(c("Ham", "Ham", "Ham", "Spam", "Spam", "Spam"))
 
-  expect_equal(mod$priors,bern_mod$priors)
+  x1 <- matrix(c(2, 3, 2, 2, 3, 2,
+                 2, 3, 2, 2, 3, 2), nrow = 6, ncol = 2)
+  colnames(x1) <- c("wo","lo")
 
-  expect_equal(mod$probability_table$present, bern_mod$probability_table$present)
+  x2 <- matrix(c(1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1), nrow = 6, ncol = 2)
+  colnames(x2) <- c("no","mo")
 
-  # Standard bernoulli model test with laplace = 1
-  mod <- fastNaiveBayes.multinomial(x, y, laplace = 1, sparse = FALSE)
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 1, sparse = FALSE, distribution = list(multinomial=colnames(x)))
-  bern_mod <- mixed_mod[[1]][[1]]
+  x3 <- matrix(c(2.8, 2.7, 2.9, 2.9, 2.7, 2.8,
+                 2.8, 2.7, 2.9, 2.9, 2.7, 2.8), nrow = 6, ncol = 2)
+  colnames(x3) <- c("go","ho")
 
-  expect_equal(mod$names,bern_mod$names)
+  x <- cbind(x1, x2, x3)
 
-  expect_equal(mod$priors,bern_mod$priors)
+  mod <- fastNaiveBayes.mixed(x, y, laplace = 0.00001, sparse = TRUE)
 
-  expect_equal(mod$probability_table$present, bern_mod$probability_table$present)
+  new_preds <- predict(mod, newdata=x[,c(1,3,5)], type = "raw")
+  other_preds <- predict(mod, newdata = x[,c(1,3,5)], type = "raw", sparse = TRUE)
 
-  # Standard bernoulli model test with laplace = 1 & Sparse
-  mod <- fastNaiveBayes.multinomial(x, y, laplace = 1, sparse = TRUE)
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 1, sparse = TRUE, distribution = list(multinomial=colnames(x)))
-  bern_mod <- mixed_mod[[1]][[1]]
-
-  expect_equal(mod$names,bern_mod$names)
-
-  expect_equal(mod$priors,bern_mod$priors)
-
-  expect_equal(mod$probability_table$present, bern_mod$probability_table$present)
-
-})
-
-test_that("Mixed event models estimation gives expected results with Bernoulli model", {
-  y <- as.factor(c('Ham','Ham','Spam','Spam','Spam'))
-  x <- matrix(c(1,0,0,0,0,1,1,0,1,0,0,1,1,1,0,0,0,1,1,1),
-              nrow = 5, ncol = 4)
-  col_names <- c('wo','mo','bo','so')
-  colnames(x) <- col_names
-
-  # Standard bernoulli model test with laplace = 0
-  mod <- fastNaiveBayes.bernoulli(x, y, laplace = 0, sparse = FALSE)
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 0, sparse = FALSE, distribution = list(bernoulli=colnames(x)))
-  bern_mod <- mixed_mod[[1]][[1]]
-
-  expect_equal(mod$names,bern_mod$names)
-
-  expect_equal(mod$priors,bern_mod$priors)
-
-  expect_equal(mod$probability_table$present, bern_mod$probability_table$present)
-
-  expect_equal(mod$probability_table$non_present, bern_mod$probability_table$non_present)
-
-  # Standard bernoulli model test with laplace = 1
-  mod <- fastNaiveBayes.bernoulli(x, y, laplace = 1, sparse = FALSE)
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 1, sparse = FALSE, distribution = list(bernoulli=colnames(x)))
-  bern_mod <- mixed_mod[[1]][[1]]
-
-  expect_equal(mod$names,bern_mod$names)
-
-  expect_equal(mod$priors,bern_mod$priors)
-
-  expect_equal(mod$probability_table$present, bern_mod$probability_table$present)
-
-  expect_equal(mod$probability_table$non_present, bern_mod$probability_table$non_present)
-
-  # Standard bernoulli model test with laplace = 1 & Sparse
-  mod <- fastNaiveBayes.bernoulli(x, y, laplace = 1, sparse = TRUE)
-  mixed_mod <- fastNaiveBayes.mixed(x, y, laplace = 1, sparse = TRUE, distribution = list(bernoulli=colnames(x)))
-  bern_mod <- mixed_mod[[1]][[1]]
-
-  expect_equal(mod$names,bern_mod$names)
-
-  expect_equal(mod$priors,bern_mod$priors)
-
-  expect_equal(mod$probability_table$present, bern_mod$probability_table$present)
-
-  expect_equal(mod$probability_table$non_present, bern_mod$probability_table$non_present)
-
+  expect_equal(sum(abs(new_preds-other_preds)), 0)
+  expect_warning(predict(mod, newdata=x, type = "class"))
+  expect_error(fastNaiveBayes.mixed(x[1:3, ], y))
 })
