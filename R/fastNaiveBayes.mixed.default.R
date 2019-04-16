@@ -1,7 +1,11 @@
 #' @export
 #' @import Matrix
 #' @rdname fastNaiveBayes.mixed
-fastNaiveBayes.mixed.default <- function(x, y, laplace = 0, std_threshold = 0.01, sparse = FALSE, distribution = NULL, ...) {
+fastNaiveBayes.mixed.default <- function(x,
+                                         y,
+                                         laplace = 0,
+                                         sparse = FALSE,
+                                         distribution = NULL, ...) {
   if (nrow(x) != length(y)) {
     stop("X and Y must be equal length")
   }
@@ -46,7 +50,7 @@ fastNaiveBayes.mixed.default <- function(x, y, laplace = 0, std_threshold = 0.01
                newx <- as.matrix(newx)
                colnames(newx) <- distribution[[dist]]
              }
-             fastNaiveBayes.gaussian(newx, y, std_threshold, sparse)
+             fastNaiveBayes.gaussian(newx, y, sparse)
            }
     )
   })

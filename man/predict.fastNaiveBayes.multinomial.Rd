@@ -5,7 +5,8 @@
 \title{Predict Method for fastNaiveBayes.multinomial fits}
 \usage{
 \method{predict}{fastNaiveBayes.multinomial}(object, newdata,
-  type = c("class", "raw", "rawprob"), sparse = FALSE, ...)
+  type = c("class", "raw", "rawprob"), sparse = FALSE,
+  threshold = .Machine$double.eps, ...)
 }
 \arguments{
 \item{object}{A fitted object of class "fastNaiveBayes.multinomial".}
@@ -19,6 +20,9 @@ extra columns all filled with 0's.}
 
 \item{sparse}{Use a sparse Matrix? If true a sparse matrix will be constructed from x, which can give up to a 40\% speed up.
 It's possible to directly feed a sparse dgcMatrix as x, which will set this parameter to TRUE}
+
+\item{threshold}{A threshold for the minimum probability. For Bernoulli and Multinomial event models Laplace smoothing solves this,
+but in the case of Gaussian event models, this ensures numerical probabilities}
 
 \item{...}{Not used.}
 }
@@ -39,27 +43,18 @@ In the extremely unlikely case that two classes have the exact same estimated pr
 }
 \examples{
 rm(list = ls())
-require(mlbench)
-require(Matrix)
+library(fastNaiveBayes)
 
-# Load BreastCancer data
-data(BreastCancer)
-dim(BreastCancer)
-levels(BreastCancer$Class)
-head(BreastCancer)
+cars <- mtcars
+y <- as.factor(ifelse(cars$mpg > 25, "High", "Low"))
+x <- cars[, 2:ncol(cars)]
 
-# Select couple of columns
-data_mat <- BreastCancer[, c("Class", "Cl.thickness", "Cell.size", "Cell.shape", "Marg.adhesion")]
+dist <- fastNaiveBayes::fastNaiveBayes.detect_distribution(x, nrows = nrow(x))
 
-y <- data_mat[, "Class"]
-data_mat <- data_mat[, setdiff(colnames(data_mat), c("Class"))]
-for (i in 1:ncol(data_mat)) {
-  data_mat[[i]] <- as.numeric(data_mat[[i]])
-}
-
-
-model <- fastNaiveBayes.multinomial(data_mat[1:400, ], y[1:400], laplace = 1, sparse = FALSE)
-preds <- predict(model, newdata = data_mat[401:nrow(data_mat), ], type = "class")
-
-mean(preds != y[401:length(y)])
+# Multinomial only
+vars <- c(dist$bernoulli, dist$multinomial)
+newx <- x[, vars]
+mod <- fastNaiveBayes.multinomial(newx, y, laplace = 1)
+pred <- predict(mod, newdata = newx)
+mean(pred != y)
 }

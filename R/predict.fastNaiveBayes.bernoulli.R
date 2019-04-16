@@ -10,6 +10,8 @@
 #' @param type If "raw", the conditional a-posterior probabilities for each class are returned, and the class with maximal probability else.
 #' @param sparse Use a sparse Matrix? If true a sparse matrix will be constructed from x, which can give up to a 40\% speed up.
 #'     It's possible to directly feed a sparse dgcMatrix as x, which will set this parameter to TRUE
+#' @param threshold A threshold for the minimum probability. For Bernoulli and Multinomial event models Laplace smoothing solves this,
+#' but in the case of Gaussian event models, this ensures numerical probabilities
 #' @param ... Not used.
 #' @return If type = 'class', a factor with classified class levels. If type = 'raw', a matrix with the predicted probabilities of
 #'     each class, where each column in the matrix corresponds to a class level.
@@ -24,37 +26,26 @@
 #'     on different subselections of the same initial matrix, see examples for further details.
 #' @examples
 #' rm(list = ls())
-#' require(mlbench)
-#' require(Matrix)
+#' library(fastNaiveBayes)
 #'
-#' # Load BreastCancer data
-#' data(BreastCancer)
-#' dim(BreastCancer)
-#' levels(BreastCancer$Class)
-#' head(BreastCancer)
+#' cars <- mtcars
+#' y <- as.factor(ifelse(cars$mpg > 25, "High", "Low"))
+#' x <- cars[, 2:ncol(cars)]
 #'
-#' # Bernoulli dummy example
-#' data_mat <- BreastCancer[, c("Class", "Cl.thickness", "Cell.size", "Cell.shape", "Marg.adhesion")]
-#' col_counter <- ncol(data_mat) + 1
-#' for (i in 2:ncol(data_mat)) {
-#'   for (val in unique(data_mat[, i])) {
-#'     data_mat[, col_counter] <- ifelse(data_mat[, i] == val, 1, 0)
-#'     col_counter <- col_counter + 1
-#'   }
+#' dist <- fastNaiveBayes::fastNaiveBayes.detect_distribution(x, nrows = nrow(x))
+#'
+#' # Bernoulli only
+#' vars <- c(dist$bernoulli, dist$multinomial)
+#' newx <- x[, vars]
+#' for (i in 1:ncol(newx)) {
+#'   newx[[i]] <- as.factor(newx[[i]])
 #' }
-#'
-#' y <- data_mat[, "Class"]
-#' data_mat <- data_mat[, setdiff(colnames(data_mat), c(
-#'   "Class", "Cl.thickness", "Cell.size",
-#'   "Cell.shape", "Marg.adhesion"
-#' ))]
-#' data_mat <- as.matrix(data_mat)
-#'
-#' model <- fastNaiveBayes.bernoulli(data_mat[1:400, ], y[1:400], laplace = 1, sparse = TRUE)
-#' preds <- predict(model, newdata = data_mat[401:nrow(data_mat), ], type = "class")
-#'
-#' mean(preds != y[401:length(y)])
-predict.fastNaiveBayes.bernoulli <- function(object, newdata, type = c("class", "raw", "rawprob"), sparse = FALSE, ...) {
+#' new_mat <- model.matrix(y ~ . - 1, cbind(y, newx))
+#' mod <- fastNaiveBayes.bernoulli(new_mat, y, laplace = 1)
+#' pred <- predict(mod, newdata = new_mat)
+#' mean(pred != y)
+predict.fastNaiveBayes.bernoulli <- function(object, newdata, type = c("class", "raw", "rawprob"),
+                                             sparse = FALSE, threshold = .Machine$double.eps, ...) {
   type <- match.arg(type)
   if (class(newdata)[1] != "dgCMatrix") {
     if (!is.matrix(newdata)) {
@@ -69,25 +60,31 @@ predict.fastNaiveBayes.bernoulli <- function(object, newdata, type = c("class", 
 
   names <- object$names
 
-  other_names <- setdiff(names, colnames(newdata))
-  if (length(other_names) > 0) {
-    if (sparse) {
-      other_mat <- Matrix(0L, nrow = nrow(newdata), ncol = length(other_names), sparse = TRUE)
-    } else {
-      other_mat <- matrix(0L, nrow = nrow(newdata), ncol = length(other_names))
-    }
-    colnames(other_mat) <- other_names
+  if ( length(colnames(newdata))!=length(names) || sum(colnames(newdata)!=names)>0) {
+    other_names <- setdiff(names, colnames(newdata))
+    if (length(other_names) > 0) {
+      if (sparse) {
+        other_mat <- Matrix(0L, nrow = nrow(newdata), ncol = length(other_names), sparse = TRUE)
+      } else {
+        other_mat <- matrix(0L, nrow = nrow(newdata), ncol = length(other_names))
+      }
+      colnames(other_mat) <- other_names
 
-    newdata <- cbind(newdata, other_mat)
+      newdata <- cbind(newdata, other_mat)
+    }
+    newdata <- newdata[, names]
   }
-  newdata <- newdata[, names]
   data <- object$probability_table
 
   present <- log(data$present)
   nonpresent <- log(data$non_present)
 
+  present[is.infinite(present)] <- max(-100000, log(threshold))
+  nonpresent[is.infinite(nonpresent)] <- max(-100000, log(threshold))
+
   presence_prob <- newdata %*% t(present)
-  nonpresence_prob <- matrix(base::colSums(t(nonpresent)), nrow = nrow(presence_prob),
+  nonpresence_prob <- matrix(base::colSums(t(nonpresent)),
+                             nrow = nrow(presence_prob),
                              ncol = ncol(presence_prob), byrow = TRUE) - newdata %*% t(nonpresent)
 
   priors <- as.vector(object$priors)
@@ -101,12 +98,10 @@ predict.fastNaiveBayes.bernoulli <- function(object, newdata, type = c("class", 
   }
 
   denom <- rowSums(probs)
+  denom[denom==0] <- 1
   probs <- probs / denom
 
   if (type == "class") {
-    if (any(max.col(probs, ties.method = "last") != max.col(probs, ties.method = "first"))) {
-      warning("Exact same estimated probabilities occured. First encountered class used as classification")
-    }
     class <- names(object$priors)[max.col(probs, ties.method = "first")]
     return(as.factor(class))
   }

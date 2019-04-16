@@ -10,6 +10,8 @@
 #' @param type If "raw", the conditional a-posterior probabilities for each class are returned, and the class with maximal probability else.
 #' @param sparse Use a sparse Matrix? If true a sparse matrix will be constructed from x, which can give up to a 40\% speed up.
 #'     It's possible to directly feed a sparse dgcMatrix as x, which will set this parameter to TRUE
+#' @param threshold A threshold for the minimum probability. For Bernoulli and Multinomial event models Laplace smoothing solves this,
+#' but in the case of Gaussian event models, this ensures numerical probabilities
 #' @param ... Not used.
 #' @return If type = 'class', a factor with classified class levels. If type = 'raw', a matrix with the predicted probabilities of
 #'     each class, where each column in the matrix corresponds to a class level.
@@ -24,84 +26,20 @@
 #'     on different subselections of the same initial matrix, see examples for further details.
 #' @examples
 #' rm(list = ls())
-#' require(mlbench)
-#' require(Matrix)
-#' 
-#' # Load BreastCancer data
-#' data(BreastCancer)
-#' dim(BreastCancer)
-#' levels(BreastCancer$Class)
-#' head(BreastCancer)
-#' 
-#' # Select couple of columns
-#' data_mat <- BreastCancer[, c("Class", "Cl.thickness", "Cell.size", "Cell.shape", "Marg.adhesion")]
-#' 
-#' y <- data_mat[, "Class"]
-#' data_mat <- data_mat[, setdiff(colnames(data_mat), c("Class"))]
-#' for (i in 1:ncol(data_mat)) {
-#'   data_mat[[i]] <- as.numeric(data_mat[[i]])
-#' }
-#' 
-#' # Example using only Gaussian distribution
-#' model <- fastNaiveBayes.mixed(data_mat[1:400, ], y[1:400],
-#'   laplace = 1, sparse = TRUE,
-#'   distribution = list(
-#'     gaussian = colnames(data_mat)
-#'   )
-#' )
-#' preds <- predict(model, newdata = data_mat[401:nrow(data_mat), ], type = "class")
-#' 
-#' mean(preds != y[401:length(y)])
-#' 
-#' # Example mixing distributions
-#' model <- fastNaiveBayes.mixed(data_mat[1:400, ], y[1:400],
-#'   laplace = 1, sparse = TRUE,
-#'   distribution = list(
-#'     multinomial = c("Cl.thickness", "Cell.size"),
-#'     gaussian = c("Cell.shape", "Marg.adhesion")
-#'   )
-#' )
-#' preds <- predict(model, newdata = data_mat[401:nrow(data_mat), ], type = "class")
-#' 
-#' mean(preds != y[401:length(y)])
-#' 
-#' # Construct y and sparse matrix
-#' # Bernoulli dummy example
-#' data_mat <- BreastCancer[, c("Class", "Cl.thickness", "Cell.size", "Cell.shape", "Marg.adhesion")]
-#' col_counter <- ncol(data_mat) + 1
-#' for (i in 2:ncol(data_mat)) {
-#'   for (val in unique(data_mat[, i])) {
-#'     data_mat[, col_counter] <- ifelse(data_mat[, i] == val, 1, 0)
-#'     col_counter <- col_counter + 1
-#'   }
-#' }
-#' 
-#' y <- data_mat[, "Class"]
-#' data_mat <- data_mat[, setdiff(colnames(data_mat), c(
-#'   "Class", "Cl.thickness", "Cell.size",
-#'   "Cell.shape", "Marg.adhesion"
-#' ))]
-#' 
-#' sparse_data <- Matrix(as.matrix(data_mat), sparse = TRUE)
-#' data_mat <- as.matrix(data_mat)
-#' 
-#' # Example to estimate and predict once with Bernoulli distribution
-#' model <- fastNaiveBayes.mixed(data_mat[1:400, ], y[1:400],
-#'   laplace = 1, sparse = TRUE,
-#'   distribution = list(
-#'     bernoulli = colnames(data_mat)
-#'   )
-#' )
-#' preds <- predict(model, newdata = data_mat[401:nrow(data_mat), ], type = "class")
-#' 
-#' mean(preds != y[401:length(y)])
-#' 
-#' # Example using the direct model. This is much faster if all columns should have
-#' # The same event model. It saves a lot of overhead
-#' direct_model <- fastNaiveBayes.bernoulli(data_mat[1:400, ], y[1:400], laplace = 1, sparse = TRUE)
-#' direct_preds <- predict(direct_model, newdata = data_mat[401:nrow(data_mat), ], type = "class")
-#' mean(direct_preds != y[401:length(y)])
-predict.fastNaiveBayes.mixed <- function(object, newdata, type = c("class", "raw"), sparse = FALSE, ...) {
+#' library(fastNaiveBayes)
+#'
+#' cars <- mtcars
+#' y <- as.factor(ifelse(cars$mpg > 25, "High", "Low"))
+#' x <- cars[, 2:ncol(cars)]
+#'
+#' # Mixed event models
+#' dist <- fastNaiveBayes::fastNaiveBayes.detect_distribution(x, nrows = nrow(x))
+#' print(dist)
+#' mod <- fastNaiveBayes.mixed(x, y, laplace = 1)
+#' pred <- predict(mod, newdata = x)
+#' mean(pred != y)
+predict.fastNaiveBayes.mixed <- function(object, newdata, type = c("class", "raw"),
+                                         sparse = FALSE, threshold = .Machine$double.eps, ...) {
   type <- match.arg(type)
   if (class(newdata)[1] != "dgCMatrix") {
     if (!is.matrix(newdata)) {
@@ -140,9 +78,9 @@ predict.fastNaiveBayes.mixed <- function(object, newdata, type = c("class", "raw
       colnames(newx) <- newnames
     }
     if (is.null(probs)) {
-      probs <- stats::predict(model, newx, type = "rawprob", sparse)
+      probs <- stats::predict(model, newx, type = "rawprob", sparse, threshold)
     } else {
-      probs <- probs + stats::predict(model, newx, type = "rawprob", sparse)
+      probs <- probs + stats::predict(model, newx, type = "rawprob", sparse, threshold)
     }
   }
   probs <- exp(probs)
@@ -153,12 +91,10 @@ predict.fastNaiveBayes.mixed <- function(object, newdata, type = c("class", "raw
   }
 
   denom <- rowSums(probs)
+  denom[denom==0] <- 1
   probs <- probs / denom
 
   if (type == "class") {
-    if (any(max.col(probs, ties.method = "last") != max.col(probs, ties.method = "first"))) {
-      warning("Exact same estimated probabilities occured. First encountered class used as classification")
-    }
     class <- names(object$priors)[max.col(probs, ties.method = "first")]
     return(as.factor(class))
   }

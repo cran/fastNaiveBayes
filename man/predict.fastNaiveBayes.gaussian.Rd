@@ -5,20 +5,23 @@
 \title{Predict Method for fastNaiveBayes.gaussian fits}
 \usage{
 \method{predict}{fastNaiveBayes.gaussian}(object, newdata,
-  type = c("class", "raw", "rawprob"), sparse = FALSE, ...)
+  type = c("class", "raw", "rawprob"), sparse = FALSE,
+  threshold = .Machine$double.eps, ...)
 }
 \arguments{
 \item{object}{A fitted object of class "fastNaiveBayes.gaussian".}
 
-\item{newdata}{A numeric matrix with 1's and 0's to indicate the presence or absence of features. A Sparse dgcMatrix is also accepted.
+\item{newdata}{A numeric matrix. A Sparse dgcMatrix is also accepted.
 Note that if newdata contains features that were not encountered in the training data, these are omitted from the prediction.
-Furthermore, newdata can contain fewer features than encountered in the training data. In this case, newdata will be padded with
-extra columns all filled with 0's.}
+Furthermore, newdata can contain fewer features than encountered in the training data.}
 
 \item{type}{If "raw", the conditional a-posterior probabilities for each class are returned, and the class with maximal probability else.}
 
 \item{sparse}{Use a sparse Matrix? If true a sparse matrix will be constructed from x, which can give up to a 40\% speed up.
 It's possible to directly feed a sparse dgcMatrix as x, which will set this parameter to TRUE}
+
+\item{threshold}{A threshold for the minimum probability. For Bernoulli and Multinomial event models Laplace smoothing solves this,
+but in the case of Gaussian event models, this ensures numerical probabilities}
 
 \item{...}{Not used.}
 }
@@ -39,26 +42,18 @@ In the extremely unlikely case that two classes have the exact same estimated pr
 }
 \examples{
 rm(list = ls())
-require(mlbench)
-require(Matrix)
+library(fastNaiveBayes)
+cars <- mtcars
+y <- as.factor(ifelse(cars$mpg > 25, "High", "Low"))
+x <- cars[, 2:ncol(cars)]
 
-# Load BreastCancer data
-data(BreastCancer)
-dim(BreastCancer)
-levels(BreastCancer$Class)
-head(BreastCancer)
+dist <- fastNaiveBayes::fastNaiveBayes.detect_distribution(x, nrows = nrow(x))
 
-# Gaussian distribution example
-data_mat <- BreastCancer[, c("Class", "Cl.thickness", "Cell.size", "Cell.shape", "Marg.adhesion")]
+# Gaussian only
+vars <- c("hp", dist$gaussian)
+newx <- x[, vars]
 
-y <- data_mat[, "Class"]
-data_mat <- data_mat[, setdiff(colnames(data_mat), c("Class"))]
-for (i in 1:ncol(data_mat)) {
-  data_mat[[i]] <- as.numeric(data_mat[[i]])
-}
-
-model <- fastNaiveBayes.gaussian(data_mat[1:400, ], y[1:400], laplace = 1, sparse = FALSE)
-preds <- predict(model, newdata = data_mat[401:nrow(data_mat), ], type = "class")
-
-mean(preds != y[401:length(y)])
+mod <- fastNaiveBayes.gaussian(newx, y)
+pred <- predict(mod, newdata = newx)
+mean(pred != y)
 }
