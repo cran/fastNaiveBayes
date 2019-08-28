@@ -1,31 +1,93 @@
-#' fastNaiveBayes
+#' @title Fast Naive Bayes Classifier for different Distributions
+#' @description Extremely fast implementation of a Naive Bayes Classifier.
 #'
-#' This is an extremely fast implementation of a Naive Bayes classifier.
-#' This package is currently the only package that supports a Bernoulli distribution,
-#' a Multinomial distribution, and a Gaussian distribution, making it suitable for
-#' both binary features, frequency counts, and numerical features. Another unique
-#' feature is the support of a mix of different event models. Only numerical variables are allowed,
-#' however, categorical variables can be transformed into dummies and used with
-#' the Bernoulli distribution.
+#' A Naive Bayes classifier that assumes independence between the feature variables. Currently, either a Bernoulli,
+#' multinomial, or Gaussian distribution can be used. The bernoulli distribution should be used when the features are 0 or 1 to
+#' indicate the presence or absence of the feature in each document. The multinomial distribution should be used when the
+#' features are the frequency that the feature occurs in each document. Finally, the Gaussian distribution
+#' should be used with numerical variables. The distribution parameter is used to mix different distributions
+#' for different columns in the input matrix
 #'
-#' This implementation offers a huge performance
-#' gain compared to the 'e1071' implementation in R. The execution times were compared
-#' on a data set of tweets and was found to be around 1135 times faster. Compared to other implementations
-#' the minimum speed up was found to be 12.5 times faster for the Bernoulli distribution. See the vignette
-#' for more details. This performance gain is only realized using a Bernoulli
-#' event model. Furthermore, the Multinomial event model implementation is even slightly faster,
-#' but incomparable since it was not implemented in 'e1071'. Compared to other implementations of a
-#' Multinomial distribution, this package was found to give a speed up of 12.2 times.
+#' Use fastNaiveBayes(...) or fnb.train(...) for a mixed event distribution model. fnb.bernoulli, fnb.multinomial, fnb.gaussian and
+#' for the specific distributions
 #'
-#' The implementation is largely based on the paper
-#' "A comparison of event models for Naive Bayes anti-spam e-mail filtering" written by
-#' K.M. Schneider (2003) <doi:10.3115/1067807>.
+#' @param x a numeric matrix, or a dgcMatrix. For bernoulli should only contain 0's and 1's. For multinomial should only
+#' contain integers.
+#' @param y a factor of classes to classify
+#' @param priors a numeric vector with the priors. If left empty the priors will be determined by the relative frequency of the classes in the data
+#' @param laplace A number used for Laplace smoothing. Default is 0
+#' @param sparse Use a sparse matrix? If true a sparse matrix will be constructed from x.
+#'     It's possible to directly feed a sparse dgcMatrix as x, which will set this parameter to TRUE
+#' @param check Whether to enable formal checks on input. Recommended to set to TRUE. Set to FALSE will make it faster, but at your own risk.
+#' @param distribution A list with distribution names and column names for which to use the distribution, see examples.
+#' @param ... Not used.
 #'
-#' Any issues can be submitted to: <https://github.com/mskogholt/fastNaiveBayes/issues>.
+#' @details
+#' fastNaiveBayes(...) will convert non numeric columns to one hot encoded features to use with the Bernoulli event
+#' model. NA's in x will be set to 0 by default and observations with NA in y will be removed.
 #'
-#' For a complete list of functions, use library(help = "fastNaiveBayes").
+#' The distribution that is used for each feature is determined by a set of rules:
+#' - if the column only contains 0's and 1's a Bernoulli event model will be used
+#' - if the column only contains whole numbers a Multinomial event model will be used
+#' - if none of the above a Gaussian event model will be used.
 #'
-#' @docType package
-#' @name fastNaiveBayes
+#' By setting sparse = TRUE the numeric matrix x will be converted to a sparse dgcMatrix. This can be considerably faster
+#' in case few observations have a value different than 0.
+#'
+#' It's also possible to directly supply a sparse dgcMatrix, which can be a lot faster in case a fastNaiveBayes model
+#' is trained multiple times on the same matrix or a subset of this. See examples for more details. Bear in mind that
+#' converting to a sparse matrix can actually be slower depending on the data.
+#'
+#' @return A fitted object of class "fastNaiveBayes". It has four components:
+#'
+#'     \describe{
+#'         \item{model}{Fitted fastNaiveBayes model}
+#'         \item{names}{Names of features used to train this fastNaiveBayes model}
+#'         \item{distribution}{Distribution used for each column of x}
+#'         \item{levels}{Levels of y}
+#'     }
+#' @export
 #' @import Matrix
-NULL
+#' @examples
+#' rm(list = ls())
+#' library(fastNaiveBayes)
+#' cars <- mtcars
+#' y <- as.factor(ifelse(cars$mpg > 25, "High", "Low"))
+#' x <- cars[,2:ncol(cars)]
+#'
+#' mod <- fastNaiveBayes(x, y, laplace = 1)
+#'
+#' pred <- predict(mod, newdata = x)
+#' mean(y!=pred)
+#'
+#' mod <- fnb.train(x, y, laplace = 1)
+#'
+#' pred <- predict(mod, newdata = x)
+#' mean(y!=pred)
+#'
+#' dist <- fnb.detect_distribution(x)
+#'
+#' bern <- fnb.bernoulli(x[,dist$bernoulli], y, laplace = 1)
+#' pred <- predict(bern, x[,dist$bernoulli])
+#' mean(y!=pred)
+#'
+#' mult <- fnb.multinomial(x[,dist$multinomial], y, laplace = 1)
+#' pred <- predict(mult, x[,dist$multinomial])
+#' mean(y!=pred)
+#'
+#' gauss <- fnb.gaussian(x[,dist$gaussian], y)
+#' pred <- predict(gauss, x[,dist$gaussian])
+#' mean(y!=pred)
+#'
+#' @seealso \code{\link{predict.fastNaiveBayes}} for the predict function for the fastNaiveBayes model.
+#' @rdname fastNaiveBayesF
+fastNaiveBayes <- function(x, y, priors = NULL, laplace = 0, sparse = FALSE, check = TRUE, distribution = NULL, ...){
+  UseMethod("fastNaiveBayes")
+}
+
+#' @import Matrix
+#' @export
+#' @rdname fastNaiveBayesF
+fastNaiveBayes.default <- function(x, y, priors = NULL, laplace = 0, sparse = FALSE, check = TRUE, distribution = NULL, ...){
+  return(fnb.train(x, y, priors, laplace, sparse, check, distribution = distribution))
+}
