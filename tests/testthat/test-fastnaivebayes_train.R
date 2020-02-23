@@ -30,6 +30,17 @@ test_that("Mixed event models estimation gives expected results when mixed", {
   colnames(x) <- col_names
   x <- as.data.frame(x)
 
+  # Distributions
+  expect_error(fnb.train(x, y, laplace = 0, sparse = FALSE,
+                         distribution = "ABC"))
+  expect_error(fnb.train(x, y, laplace = 0, sparse = FALSE,
+                         distribution = list("ABC"=1)))
+
+  dist <- fnb.detect_distribution(x)
+  dist[["abc"]] <- "bcd"
+  expect_warning(fnb.train(x, y, laplace = 0, sparse = FALSE,
+                         distribution =  dist))
+
   mixed_mod <- fnb.train(x, y, laplace = 0, sparse = FALSE)
   mixed_sparse_mod <- fnb.train(Matrix(as.matrix(x), sparse = TRUE), y, laplace = 0)
   mixed_sparse_cast_mod <- fnb.train(x, y, laplace = 0, sparse = TRUE)
@@ -98,6 +109,16 @@ test_that("", {
 
   predictions <- predict(mixed, x[,3,drop=FALSE], type = "raw")
   single_predictions <- predict(single_mod, x[,3,drop=FALSE], type = "raw")
+
+  expect_equal(sum(round(abs(predictions - single_predictions), digits = 12)), 0)
+
+  # Poisson
+  mixed <- fnb.train(x[,1,drop=FALSE], y, sparse = FALSE, distribution =
+                       list("poisson"=c("wo")))
+  single_mod <- fnb.poisson(x[,1,drop=FALSE], y, sparse = FALSE)
+
+  predictions <- predict(mixed, x[,1,drop=FALSE], type = "raw")
+  single_predictions <- predict(single_mod, x[,1,drop=FALSE], type = "raw")
 
   expect_equal(sum(round(abs(predictions - single_predictions), digits = 12)), 0)
 })

@@ -1,91 +1,90 @@
 context("Test Check Args")
 
-test_that("Train checks args", {
+test_that("Check Arg Distribution", {
+  x <- matrix(
+    c(1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1),
+    nrow = 5,
+    ncol = 4,
+    dimnames = list(NULL, c("wo", "mo", "bo", "so")))
+
+  expect_error(fnb.check.args.dist(x, -1))
+})
+
+test_that("Check Arg Model", {
+
   y <- as.factor(c("Ham", "Ham", "Spam", "Spam", "Spam"))
-  x <- matrix(c(2, 3, 0, 1, 0, 5, 3, 0, 2, 0, 0, 1, 3, 1, 0, 0, 0, 4, 3, 5),
-              nrow = 5, ncol = 4)
-  colnames(x) <- c("wo", "mo", "bo", "so")
-  x <- as.data.frame(x)
+  x <- matrix(
+    c(1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1),
+    nrow = 5,
+    ncol = 4,
+    dimnames = list(NULL, c("wo", "mo", "bo", "so")))
 
-  expect_equal(fastNaiveBayes:::fnb.check.args.dist(as.data.frame(x), nrow(x)), fastNaiveBayes:::fnb.check.args.dist(x, nrow(x)))
-  expect_error(fastNaiveBayes:::fnb.check.args.dist(x, nrows = 0))
+  # Test matrix casting
+  expect_equal(fnb.check.args.model(Matrix(x, sparse=TRUE), y, priors = NULL)$sparse, TRUE)
+  expect_equal(fnb.check.args.model(as.data.frame(x), y, priors = NULL, sparse = FALSE)$x, x)
+  expect_equal(fnb.check.args.model(x, y, priors = NULL, sparse = TRUE)$x, Matrix(x, sparse=TRUE))
 
-  mod <- fnb.train(x, y)
-  expect_error(fastNaiveBayes:::fnb.check.args.mixed_predict(object=mod, newdata=x, type="raw", sparse = FALSE, threshold = -1))
-  expect_error(fastNaiveBayes:::fnb.check.args.mixed_predict(object=mod, newdata=x[,1:2], type="raw", sparse = TRUE, threshold = -1))
+  # Test
+  expect_error(fnb.check.args.model(matrix("", nrow=10, ncol=0), y, priors = NULL, sparse = TRUE))
 
-  expect_error(fastNaiveBayes:::fnb.check.args.train(x, y, priors = NULL, laplace = -1, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.check.args.train(x, y, priors = list(1,2), laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.check.args.train(x, y, priors = c(1,2,3), laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.check.args.train(x, y, priors = c(1,2), laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.check.args.train(x, y, priors = NULL, laplace = 0, sparse = FALSE,
-                                                     distribution = c("bernoulli")))
+  # Test NA conversion
+  nax <- x
+  nax[1,3] <- NA
+  expect_warning(args <- fnb.check.args.model(nax, y, priors = NULL, sparse = FALSE))
+  expect_equal(args$x, x)
 
-  expect_error(fastNaiveBayes:::fnb.check.args.train(x, y, priors = NULL, laplace = 0, sparse = FALSE,
-                                                     distribution = list("martin"=c("h","a"))))
+  # Test factor conversion
+  expect_equal(fnb.check.args.model(x, as.character(y), priors = NULL, sparse = FALSE)$y, y)
 
-  expect_warning(fastNaiveBayes:::fnb.check.args.train(x, y, priors = NULL, laplace = 0, sparse = FALSE,
-                                                       distribution = list("bernoulli"=c("h","a"),
-                                                                           "martin"=c("a","b"))))
+  # Test NA removal from Y
+  nay <- y
+  nay[5] <- NA
+  expect_warning(args <- fnb.check.args.model(x, nay, priors = NULL, sparse = FALSE))
+  expect_equal(args$y, nay[!is.na(nay)])
+  expect_equal(args$x, x[!is.na(nay),])
 
-  expect_error(fastNaiveBayes:::fnb.check.args.train(x, y, priors = NULL, laplace = 0, sparse = FALSE,
-                                                     distribution = c("bernoulli")))
+  # Test row/label mismatch
+  expect_error(fnb.check.args.model(x[1:2,], y, priors = NULL, sparse = FALSE))
+
+  # Test priors numeric
+  expect_error(fnb.check.args.model(x, y, priors = list("ABC"), sparse = FALSE))
+
+  # Test priors equal to levels of y
+  expect_error(fnb.check.args.model(x, y, priors = c(0.1, 0.3, 0.6), sparse = FALSE))
+
+  # Test priors add up to 1
+  expect_error(fnb.check.args.model(x, y, priors = c(0.2, 0.2), sparse = FALSE))
 
 })
 
+test_that("Check Arg Predict", {
 
-test_that("Bernoulli checks args", {
   y <- as.factor(c("Ham", "Ham", "Spam", "Spam", "Spam"))
-  x <- matrix(c(2, 3, 0, 1, 0, 5, 3, 0, 2, 0, 0, 1, 3, 1, 0, 0, 0, 4, 3, 5),
-    nrow = 5, ncol = 4)
-  colnames(x) <- c("wo", "mo", "bo", "so")
-  x <- as.data.frame(x)
+  x <- matrix(
+    c(1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1),
+    nrow = 5,
+    ncol = 4,
+    dimnames = list(NULL, c("wo", "mo", "bo", "so")))
+  object <- fnb.bernoulli(x, y, laplace = 1)
+  newdata <- x
 
-  mod <- fnb.bernoulli(x, y)
-  expect_error(fastNaiveBayes:::fnb.bernoulli.check.args.predict(object=mod, newdata=x, type="raw", sparse = FALSE, threshold = -1))
-  expect_error(fastNaiveBayes:::fnb.bernoulli.check.args.predict(object=mod, newdata=x[,1:2], type="raw", sparse = TRUE, threshold = -1))
+  # Test threshold
+  expect_error(fnb.check.args.predict(object, newdata, "raw", FALSE, threshold=-1))
 
-  expect_error(fastNaiveBayes:::fnb.bernoulli.check.args.model(x[2:5,], y[2:5], priors = NULL, laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.bernoulli.check.args.model(x, y, priors = NULL, laplace = -1, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.bernoulli.check.args.model(x, y, priors = list(1,2), laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.bernoulli.check.args.model(x, y, priors = c(1,2,3), laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.bernoulli.check.args.model(x, y, priors = c(1,2), laplace = 0, sparse = FALSE, distribution = NULL))
-})
+  # Test threshold
+  expect_error(fnb.check.args.predict(object, matrix("", nrow=10, ncol=0), "raw", FALSE, threshold=0.1))
 
-test_that("Multinomial checks args", {
-  y <- as.factor(c("Ham", "Ham", "Spam", "Spam", "Spam"))
-  x <- matrix(c(2, 3, 0, 1, 0, 5, 3, 0, 2, 0, 0, 1, 3, 1, 0, 0, 0, 4, 3, 5),
-              nrow = 5, ncol = 4)
-  colnames(x) <- c("wo", "mo", "bo", "so")
-  x <- as.data.frame(x)
+  # Test empty
+  expect_error(fnb.check.args.predict(object, matrix("", nrow=10, ncol=0), "raw", FALSE, threshold=-1))
 
-  mod <- fnb.multinomial(x, y)
-  expect_error(fastNaiveBayes:::fnb.multinomial.check.args.predict(object=mod, newdata=x, type="raw", sparse = FALSE, threshold = -1))
-  expect_error(fastNaiveBayes:::fnb.multinomial.check.args.predict(object=mod, newdata=x[,1:2], type="raw", sparse = TRUE, threshold = -1))
+  # Test NA conversion
+  nax <- newdata
+  nax[1,3] <- NA
+  expect_warning(args <- fnb.check.args.predict(object, nax, "raw", FALSE, threshold=0.1))
+  expect_equal(args$newdata, newdata)
 
-  expect_error(fastNaiveBayes:::fnb.multinomial.check.args.model(x[2:5,], y[2:5], priors = NULL, laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.multinomial.check.args.model(x, y, priors = NULL, laplace = -1, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.multinomial.check.args.model(x, y, priors = list(1,2), laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.multinomial.check.args.model(x, y, priors = c(1,2,3), laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.multinomial.check.args.model(x, y, priors = c(1,2), laplace = 0, sparse = FALSE, distribution = NULL))
-
-})
-
-test_that("Gaussian checks args", {
-  y <- as.factor(c("Ham", "Ham", "Spam", "Spam", "Spam"))
-  x <- matrix(c(2, 3, 0, 1, 0, 5, 3, 0, 2, 0, 0, 1, 3, 1, 0, 0, 0, 4, 3, 5),
-              nrow = 5, ncol = 4)
-  colnames(x) <- c("wo", "mo", "bo", "so")
-  x <- as.data.frame(x)
-
-  mod <- fnb.gaussian(x, y)
-  expect_error(fastNaiveBayes:::fnb.gaussian.check.args.predict(object=mod, newdata=x, type="raw", sparse = FALSE, threshold = -1))
-  expect_error(fastNaiveBayes:::fnb.gaussian.check.args.predict(object=mod, newdata=x[,1:2], type="raw", sparse = TRUE, threshold = -1))
-
-  expect_error(fastNaiveBayes:::fnb.gaussian.check.args.model(x[2:5,], y[2:5], priors = NULL, laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.gaussian.check.args.model(x, y, priors = NULL, laplace = -1, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.gaussian.check.args.model(x, y, priors = list(1,2), laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.gaussian.check.args.model(x, y, priors = c(1,2,3), laplace = 0, sparse = FALSE, distribution = NULL))
-  expect_error(fastNaiveBayes:::fnb.gaussian.check.args.model(x, y, priors = c(1,2), laplace = 0, sparse = FALSE, distribution = NULL))
+  # Test new names warning
+  object <- fnb.bernoulli(x[,1:3], y, laplace = 1)
+  expect_warning(fnb.check.args.predict(object, newdata, "raw", FALSE, threshold=0.1))
 
 })

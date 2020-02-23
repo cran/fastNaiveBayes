@@ -1,7 +1,7 @@
 Package: fastNaiveBayes
 Type: Package
 Title: Extremely Fast Implementation of a Naive Bayes Classifier
-Version: 2.1.1
+Version: 2.2.0
 Author: Martin Skogholt
 Maintainer: Martin Skogholt <m.skogholt@gmail.com>
 Description: This is an extremely fast implementation of a Naive Bayes classifier. This 
@@ -25,6 +25,6 @@ Suggests: knitr, rmarkdown, testthat
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2020-02-09 11:52:39 UTC; Martin
+Packaged: 2020-02-23 14:54:24 UTC; Martin
 Repository: CRAN
-Date/Publication: 2020-02-09 13:00:06 UTC
+Date/Publication: 2020-02-23 15:10:02 UTC

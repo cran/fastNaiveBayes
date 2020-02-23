@@ -25,11 +25,13 @@ test_that("Predict", {
   # Column padding
   expect_warning(predict(mod, x[,1:3], type = "raw"))
   dropped_predictions <- predict(mod, x[,1:3], type = "raw", silent = TRUE)
+  dropped_alt_predictions <- predict(mod, x[,1:3], type = "raw", silent = TRUE, sparse = TRUE)
 
   x[,4] <- 0
   alt_predictions <- predict(mod, x, type = "raw")
 
   expect_equal(sum(round(abs(dropped_predictions-alt_predictions), digits = 12)), 0)
+  expect_equal(sum(round(abs(dropped_predictions-dropped_alt_predictions), digits = 12)), 0)
 
   # Ignore new column
   mod <- fnb.multinomial(x, y, laplace = 1)
@@ -38,7 +40,7 @@ test_that("Predict", {
   x <- cbind(x, x[,1, drop=FALSE])
   colnames(x)[5] <- "womo"
 
-  new_predictions <- predict(mod, x, type = "raw")
+  new_predictions <- predict(mod, x, type = "raw", silent=TRUE)
   expect_equal(sum(round(abs(predictions-new_predictions), digits = 12)), 0)
 
   # All new columns is same as all 0
@@ -75,6 +77,7 @@ test_that("Standard 3 classes", {
   )
 
   mod <- fnb.multinomial(x, y)
+  expect_error(fnb.multinomial(x, y, laplace = -1))
 
   predictions <- predict(mod, x, type="raw")
 
@@ -94,10 +97,13 @@ test_that("Standard 3 classes", {
 
 test_that("Laplace and priors",{
   actuals_laplace <- matrix(
-    c(1/4, 9/21,
-      3/4, 12/21),
+    c(
+      0.2941176, 0.7058824,
+      0.3424658, 0.6575342
+    ),
     nrow = 2,
     ncol = 2,
+    byrow=TRUE,
     dimnames = list(NULL, c("Ham", "Spam"))
   )
 
@@ -110,21 +116,19 @@ test_that("Laplace and priors",{
     dimnames = list(NULL, c("ho", "mo"))
   )
 
-  mod <- fnb.bernoulli(x, y, laplace = 2, priors = c(1/3, 2/3))
+  mod <- fnb.multinomial(x, y, laplace = 2, priors = c(1/3, 2/3))
+  sparse_mod <- fnb.multinomial(Matrix(x, sparse = TRUE), y, laplace = 2, priors = c(1/3, 2/3))
+  sparse_cast_mod <- fnb.multinomial(x, y, sparse = TRUE, laplace = 2, priors = c(1/3, 2/3))
 
   predictions <- predict(mod, x, type="raw")
-
-  expect_equal(sum(round(abs(predictions-actuals_laplace), digits = 12)), 0)
-
-  # Test Sparse Matrices
-  sparse_mod <- fnb.bernoulli(Matrix(x, sparse = TRUE), y, laplace = 2, priors = c(1/3, 2/3))
-  sparse_cast_mod <- fnb.bernoulli(x, y, sparse = TRUE, laplace = 2, priors = c(1/3, 2/3))
-
   sparse_predictions <- predict(sparse_mod, x, type = "raw")
   sparse_cast_predictions <- predict(sparse_cast_mod, x, type = "raw")
 
+
+  expect_equal(sum(round(abs(predictions-actuals_laplace), digits = 7)), 0)
   expect_equal(sum(round(abs(predictions-sparse_predictions), digits = 12)), 0)
   expect_equal(sum(round(abs(predictions-sparse_cast_predictions), digits = 12)), 0)
+
 })
 
 test_that("Single column",{

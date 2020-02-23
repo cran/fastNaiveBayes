@@ -1,4 +1,4 @@
-context("Test Gaussian")
+context("Test Poisson")
 
 test_that("Predict", {
   y <- as.factor(c("Ham", "Ham", "Spam", "Spam", "Spam"))
@@ -13,10 +13,8 @@ test_that("Predict", {
   df <- as.data.frame(x)
 
   # Data frame casting
-  mod <- fnb.gaussian(x, y)
-  df_mod <- fnb.gaussian(df, y)
-
-  expect_error(fnb.gaussian(x[1:3,], y[1:3]))
+  mod <- fnb.poisson(x, y)
+  df_mod <- fnb.poisson(df, y)
 
   predictions <- predict(mod, x, type = "raw")
   risky_predictions <- predict(mod, x, type = "raw", check=FALSE)
@@ -33,13 +31,13 @@ test_that("Predict", {
   dropped_predictions <- predict(mod, x[,1:3], type = "raw", silent = TRUE)
 
   dropped_x <- x[,1:3]
-  mod <- fnb.gaussian(dropped_x, y)
+  mod <- fnb.poisson(dropped_x, y)
   alt_predictions <- predict(mod, x, type = "raw", silent=TRUE)
 
   expect_equal(sum(round(abs(dropped_predictions-alt_predictions), digits = 12)), 0)
 
   # Ignore new column
-  mod <- fnb.gaussian(x, y)
+  mod <- fnb.poisson(x, y)
   predictions <- predict(mod, x, type = "raw")
 
   x <- cbind(x, x[,1, drop=FALSE])
@@ -72,11 +70,11 @@ test_that("Standard 3 classes", {
 
   actuals <- matrix(
     c(
-      0.668632030, 0.3313680,
-      0.793288288, 0.2067117,
-      0.002007792, 0.9979922,
-      0.092781300, 0.9072187,
-      0.127527893, 0.8724721
+      0.67913774, 0.3208623,
+      0.41976782, 0.5802322,
+      0.07526245, 0.9247376,
+      0.23443299, 0.7655670,
+      0.57454707, 0.4254529
     ),
     nrow = 5,
     ncol = 2,
@@ -84,15 +82,15 @@ test_that("Standard 3 classes", {
     dimnames = list(NULL, c("Ham", "Spam"))
   )
 
-  mod <- fnb.gaussian(x, y, priors = c(1/4, 3/4))
+  mod <- fnb.poisson(x, y, priors = c(2/5, 3/5))
 
   predictions <- predict(mod, x, type="raw")
 
   expect_equal(sum(round(abs(predictions-actuals), digits = 7)), 0)
 
   # Test Sparse Matrices
-  sparse_mod <- fnb.gaussian(Matrix(x, sparse = TRUE), y, priors = c(1/4, 3/4))
-  sparse_cast_mod <- fnb.gaussian(x, y, sparse = TRUE, priors = c(1/4, 3/4))
+  sparse_mod <- fnb.poisson(Matrix(x, sparse = TRUE), y, priors = c(2/5, 3/5))
+  sparse_cast_mod <- fnb.poisson(x, y, sparse = TRUE, priors = c(2/5, 3/5))
 
   sparse_predictions <- predict(sparse_mod, x, type = "raw")
   sparse_cast_predictions <- predict(sparse_cast_mod, x, type = "raw")
@@ -113,11 +111,11 @@ test_that("Single column",{
 
   actuals_ho_only <- matrix(
     c(
-      0.6663074, 0.3336926,
-      0.1408233, 0.8591767,
-      0.6663074, 0.3336926,
-      0.8994864, 0.1005136,
-      0.6663074, 0.3336926
+        0.6053645, 0.3946355,
+        0.5056005, 0.4943995,
+        0.6053645, 0.3946355,
+        0.6970593, 0.3029407,
+        0.6053645, 0.3946355
     ),
     nrow = 5,
     ncol = 2,
@@ -125,14 +123,14 @@ test_that("Single column",{
     dimnames = list(NULL, c("Ham", "Spam"))
   )
 
-  mod <- fnb.gaussian(x[, 1, drop=FALSE], y)
+  mod <- fnb.poisson(x[, 1, drop=FALSE], y)
   predictions <- predict(mod, x[, 1, drop=FALSE], type="raw")
 
   expect_equal(sum(round(abs(predictions-actuals_ho_only), digits = 7)), 0)
 
   # Test Sparse Matrices
-  sparse_mod <- fnb.gaussian(Matrix(x[, 1, drop=FALSE], sparse = TRUE), y)
-  sparse_cast_mod <- fnb.gaussian(x[, 1, drop=FALSE], y, sparse = TRUE)
+  sparse_mod <- fnb.poisson(Matrix(x[, 1, drop=FALSE], sparse = TRUE), y)
+  sparse_cast_mod <- fnb.poisson(x[, 1, drop=FALSE], y, sparse = TRUE)
 
   sparse_predictions <- predict(sparse_mod, x[, 1, drop=FALSE], type = "raw")
   sparse_cast_predictions <- predict(sparse_cast_mod, x[, 1, drop=FALSE], type = "raw")

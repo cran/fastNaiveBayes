@@ -89,13 +89,28 @@ fnb.train <- function(x, y, priors = NULL, laplace = 0, sparse = FALSE, check = 
 #' @rdname fastNaiveBayesF
 fnb.train.default <- function(x, y, priors = NULL, laplace = 0, sparse = FALSE, check = TRUE, distribution = fnb.detect_distribution(x)) {
   if(check){
-    args <- fnb.check.args.train(x, y, priors, laplace, sparse, distribution)
+    args <- fnb.check.args.model(x, y, priors, sparse)
     x <- args$x
     y <- args$y
     priors <- args$priors
-    laplace <- args$laplace
     sparse <- args$sparse
-    distribution <- args$distribution
+
+    # distribution
+    if (!is.null(distribution)) {
+      if(!is.list(distribution)){
+        stop('distribution should be a list with distribution names and column names corresponding to x, see details.')
+      }
+
+      distribution <- distribution[lengths(distribution) != 0]
+      if(!any(c("bernoulli","multinomial","gaussian","poisson") %in% names(distribution))){
+        stop('Not a single accepted distribution was specified or all were empty')
+      }
+
+      if(any(!names(distribution) %in% c("bernoulli","multinomial","gaussian","poisson"))){
+        warning('Redundant distribution specified, will be removed')
+        distribution <- distribution[names(distribution) %in% c("bernoulli","multinomial","gaussian","poisson")]
+      }
+    }
   }
 
   models <- lapply(names(distribution), function(dist) {
@@ -111,21 +126,27 @@ fnb.train.default <- function(x, y, priors = NULL, laplace = 0, sparse = FALSE, 
            gaussian = {
              newx <- x[, distribution[[dist]], drop=FALSE]
              fnb.gaussian(newx, y, priors, sparse)
+           },
+           poisson = {
+             newx <- x[, distribution[[dist]], drop=FALSE]
+             fnb.poisson(newx, y, priors, sparse)
            }
     )
   })
 
-  if(is.null(priors)){
-    priors <- tabulate(y) / nrow(x)
-  }
-
-  structure(list(
-    models = models,
-    priors = priors,
-    names = colnames(x),
-    distribution = distribution,
-    levels = levels(y)),
-
+  structure(
+    list(
+      models = models,
+      n = tabulate(y),
+      obs = nrow(x),
+      priors = priors,
+      names = colnames(x),
+      distribution = distribution,
+      levels = levels(y),
+      laplace = laplace,
+      x = x,
+      y = y
+    ),
     class = "fastNaiveBayes"
   )
 }
@@ -157,7 +178,7 @@ predict.fastNaiveBayes <- function(object, newdata, type = c("class", "raw"), sp
 
   type <- match.arg(type)
   if(check){
-    args <- fnb.check.args.mixed_predict(object, newdata, type, sparse, threshold)
+    args <- fnb.check.args.predict(object, newdata, type, sparse, threshold)
     object <- args$object
     newdata <- args$newdata
     type <- args$type
@@ -177,6 +198,10 @@ predict.fastNaiveBayes <- function(object, newdata, type = c("class", "raw"), sp
   probs <- exp(probs)
 
   priors <- object$priors
+  if(is.null(priors)){
+    priors <- object$n / object$obs
+  }
+
   for(i in 1:length(priors)){
     probs[,i] <- probs[,i]*priors[i]
   }
@@ -192,120 +217,3 @@ predict.fastNaiveBayes <- function(object, newdata, type = c("class", "raw"), sp
   }
   return(probs)
 }
-
-#' @import Matrix
-fnb.check.args.train <- function(x, y, priors, laplace, sparse, distribution=NULL){
-  # x
-  if (class(x)[1] != "dgCMatrix") {
-    if (!is.matrix(x)) {
-      x <- as.matrix(x)
-    }
-    if (sparse) {
-      x <- Matrix(x, sparse = TRUE)
-    }
-  } else {
-    sparse <- TRUE
-  }
-
-  if(is.null(colnames(x))){
-    stop("x must have column names!")
-  }
-
-  if(ncol(x)<1){
-    stop('x seems to be empty')
-  }
-
-  if(any(is.na(x))){
-    warning("x contains na's. These will be set to 0")
-    x[is.na(x)] <- 0
-  }
-
-  # y
-  if(!is.factor(y)){
-    y <- as.factor(y)
-  }
-
-  if(nlevels(y)<=1){
-    stop('y does not have enough levels to classify.')
-  }
-
-  if(any(is.na(y))){
-    warning("y contains na's. These observations will be removed")
-    x <- x[!is.na(y),]
-    y <- y[!is.na(y)]
-  }
-
-  # y with x
-  if(nrow(x)!=length(y)){
-    stop('Rows of x not equal to length of y')
-  }
-
-  if(any(rowsum(rep(1,times = length(y)), y)<1)){
-    stop('Not enough rows. Should be at least 1 rows or more for each class')
-  }
-
-  # laplace
-  if(laplace < 0){
-    stop('Laplace smoothing must a positive number.')
-  }
-
-  # priors
-  if(!is.null(priors)){
-    if(!is.vector(priors, mode = "numeric")){
-      stop(paste0("Priors should be a numeric vector with ",
-                  nlevels(y), " prior probabilities"))
-    }
-
-    if (length(priors) != nlevels(y)){
-      stop(paste0("Priors should be a vector with ",
-                  nlevels(y), " prior probabilities"))
-    }
-
-    if(abs(sum(priors)-1) > .Machine$double.eps){
-      stop(paste0('Sum of the priors should equal 1, not ', sum(priors)))
-    }
-  }
-
-  # distribution
-  if (!is.null(distribution)) {
-    if(!is.list(distribution)){
-      stop('distribution should be a list with distribution names and column names corresponding to x, see details.')
-    }
-
-    distribution <- distribution[lengths(distribution) != 0]
-    if(!any(c("bernoulli","multinomial","gaussian") %in% names(distribution))){
-      stop('Not a single accepted distribution was specified or all were empty')
-    }
-
-    if(any(!names(distribution) %in% c("bernoulli","multinomial","gaussian"))){
-      warning('Redundant distribution specified, will be removed')
-      distribution <- distribution[names(distribution) %in% c("bernoulli","multinomial","gaussian")]
-    }
-  }
-  return(list(x=x, y=y, priors = priors, laplace=laplace, sparse=sparse, distribution=distribution))
-}
-
-#' @import Matrix
-fnb.check.args.mixed_predict <- function(object, newdata, type, sparse, threshold, silent = FALSE){
-  if(threshold<0){
-    stop('Threshold must be a positive number')
-  }
-  if (class(newdata)[1] != "dgCMatrix") {
-    if (!is.matrix(newdata)) {
-      newdata <- as.matrix(newdata)
-    }
-    if (sparse) {
-      newdata <- Matrix(newdata, sparse = TRUE)
-    }
-  } else {
-    sparse <- TRUE
-  }
-
-  if(is.null(colnames(newdata))){
-    stop("newdata does not have any column names!")
-  }
-
-  return(list(object=object, newdata=newdata, type=type, sparse=sparse, threshold = threshold))
-}
-
-
