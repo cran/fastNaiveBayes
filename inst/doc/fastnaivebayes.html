@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <meta name="author" content="Martin Skogholt" />
 
-<meta name="date" content="2020-02-23" />
+<meta name="date" content="2020-05-04" />
 
 <title>Fast Naive Bayes</title>
 
@@ -20,41 +20,67 @@
 
 <style type="text/css">code{white-space: pre;}</style>
 <style type="text/css" data-origin="pandoc">
-div.sourceCode { overflow-x: auto; }
-table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
-  margin: 0; padding: 0; vertical-align: baseline; border: none; }
-table.sourceCode { width: 100%; line-height: 100%; }
-td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
-td.sourceCode { padding-left: 5px; }
-code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
-code > span.dt { color: #902000; } /* DataType */
-code > span.dv { color: #40a070; } /* DecVal */
-code > span.bn { color: #40a070; } /* BaseN */
-code > span.fl { color: #40a070; } /* Float */
-code > span.ch { color: #4070a0; } /* Char */
-code > span.st { color: #4070a0; } /* String */
-code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
-code > span.ot { color: #007020; } /* Other */
-code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
-code > span.fu { color: #06287e; } /* Function */
-code > span.er { color: #ff0000; font-weight: bold; } /* Error */
-code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-code > span.cn { color: #880000; } /* Constant */
-code > span.sc { color: #4070a0; } /* SpecialChar */
-code > span.vs { color: #4070a0; } /* VerbatimString */
-code > span.ss { color: #bb6688; } /* SpecialString */
-code > span.im { } /* Import */
-code > span.va { color: #19177c; } /* Variable */
-code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-code > span.op { color: #666666; } /* Operator */
-code > span.bu { } /* BuiltIn */
-code > span.ex { } /* Extension */
-code > span.pp { color: #bc7a00; } /* Preprocessor */
-code > span.at { color: #7d9029; } /* Attribute */
-code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
-code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+a.sourceLine { display: inline-block; line-height: 1.25; }
+a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
+a.sourceLine:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+a.sourceLine { text-indent: -1em; padding-left: 1em; }
+}
+pre.numberSource a.sourceLine
+  { position: relative; left: -4em; }
+pre.numberSource a.sourceLine::before
+  { content: attr(title);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {  }
+@media screen {
+a.sourceLine::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
 
 </style>
 <script>
@@ -70,7 +96,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
       if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' || rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -81,7 +107,190 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
 
 </head>
 
@@ -91,8 +300,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 <h1 class="title toc-ignore">Fast Naive Bayes</h1>
-<h4 class="author"><em>Martin Skogholt</em></h4>
-<h4 class="date"><em>2020-02-23</em></h4>
+<h4 class="author">Martin Skogholt</h4>
+<h4 class="date">2020-05-04</h4>
 
 
 
@@ -118,7 +327,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>To classify a document, <span class="math inline">\(D\)</span>, the class, <span class="math inline">\(k\)</span>, with the highest probability is chosen as the classification. This means that we can simplify the equation a bit, since <span class="math inline">\(P(D)\)</span> is the same for all classes. By removing the denominator, the focus is now solely on calculating the nominator, i.e. the first 2 components.</p>
 <div id="the-prior" class="section level3">
 <h3>The prior</h3>
-<p>The prior probability of class, <span class="math inline">\(k\)</span>, i.e. <span class="math inline">\(P(C=k)\)</span>, is simply the proportion of documents in the training dataset that have class, <span class="math inline">\(k\)</span>. For example, if our training dataset consists of 100 emails that have been labeled as either <span class="math inline">\(Ham\)</span> or <span class="math inline">\(Spam\)</span> and there were 63 emails that were labeled <span class="math inline">\(Ham\)</span> and 37 emails labeled as <span class="math inline">\(Spam\)</span>. In this case, <span class="math inline">\(P(C=Spam)\)</span> is the proportion of emails that were labeled as <span class="math inline">\(Spam\)</span>, i.e. <span class="math inline">\(\frac{37}{100}=0.37\)</span>. This prior probability estimation is the same regardless of which distribution is used within the Naive Bayes Classifier.</p>
+<p>The prior probability of class, <span class="math inline">\(k\)</span>, i.e. <span class="math inline">\(P(C=k)\)</span>, is simply the proportion of documents in the training dataset that have class, <span class="math inline">\(k\)</span>. For example, if our training dataset consists of 100 emails that have been labeled as either <span class="math inline">\(Ham\)</span> or <span class="math inline">\(Spam\)</span> and there were 63 emails that were labeled <span class="math inline">\(Ham\)</span> and 37 emails labeled as <span class="math inline">\(Spam\)</span>. In this case, <span class="math inline">\(P(C=Spam)\)</span> is the proportion of emails that were labeled as <span class="math inline">\(Spam\)</span>, i.e. <span class="math inline">\(\frac{37}{100}=0.37\)</span>. This prior probability estimation is the same regardless of which distribution is used within the Naive Bayes Classifier.</p>
 </div>
 <div id="event-models" class="section level3">
 <h3>Event models</h3>
@@ -285,199 +494,202 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>It should be noted, that these results can vary a lot between data sets and is dependent on both hardware and software. The tweets data is very sparse when converted to a document-term matrix and hence this is probably a best case scenario. In order to make it easier to compare execution times, the tweets data that was used to establish these results are included in the package as ‘tweets’, the raw data, and ‘tweetsDTM’ a clean document-term matrix of the previously mentioned ‘tweets’ data. The code used to convert the raw ‘tweets’ data can be found on github in the ‘data-raw’ folder. Moreover, the code to establish the results can be found below.</p>
 <div id="code-to-compare-execution-times" class="section level3">
 <h3>Code to compare Execution Times</h3>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">ls</span>())
-###################### LIBRARIES ###########################
-<span class="kw">library</span>(tm) <span class="co">#used for text mining </span>
-<span class="kw">library</span>(e1071) <span class="co">#this package includes the naive Bayes algorithm</span>
-<span class="kw">library</span>(Matrix)
-<span class="kw">library</span>(microbenchmark)
-<span class="kw">library</span>(e1071)
-<span class="kw">library</span>(fastNaiveBayes)
-<span class="kw">library</span>(quanteda)
-<span class="kw">library</span>(naivebayes)
-<span class="kw">library</span>(bnlearn)
-<span class="kw">library</span>(klaR)
-<span class="kw">library</span>(data.table)
-
-############################ Timing Script ################
-results &lt;-<span class="st"> </span><span class="ot">NULL</span>
-
-<span class="co"># Bernoulli Event Model</span>
-tweets &lt;-<span class="st"> </span>fastNaiveBayes<span class="op">::</span>tweetsDTM
-
-
-y_var &lt;-<span class="st"> </span>tweets<span class="op">$</span>airline_sentiment
-y_var &lt;-<span class="st"> </span><span class="kw">as.factor</span>(<span class="kw">ifelse</span>(y_var<span class="op">==</span><span class="st">'negative'</span>,<span class="st">'negative'</span>,<span class="st">'non-negative'</span>))
-tweets &lt;-<span class="st"> </span>tweets[,<span class="dv">2</span><span class="op">:</span><span class="kw">ncol</span>(tweets)]
-tweets[tweets<span class="op">&gt;</span><span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">1</span>
-
-tweets &lt;-<span class="st"> </span>tweets[,<span class="kw">which</span>(<span class="kw">colSums</span>(tweets)<span class="op">!=</span><span class="dv">0</span>)]
-tweets &lt;-<span class="st"> </span>tweets[,<span class="kw">which</span>(<span class="kw">colSums</span>(tweets)<span class="op">!=</span><span class="kw">nrow</span>(tweets))]
-
-tweet_mat &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(tweets)
-sparse_tweets &lt;-<span class="st"> </span><span class="kw">Matrix</span>(<span class="kw">as.matrix</span>(tweet_mat), <span class="dt">sparse =</span> <span class="ot">TRUE</span>)
-
-<span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncol</span>(tweets)){
-  tweets[[i]] &lt;-<span class="st"> </span><span class="kw">as.factor</span>(tweets[[i]])
-}
-
-<span class="co"># BNLearn</span>
-bn_tweets &lt;-<span class="st"> </span><span class="kw">cbind</span>(y_var, tweets)
-<span class="kw">colnames</span>(bn_tweets)[<span class="dv">1</span>] &lt;-<span class="st"> 'y_var'</span>
-
-<span class="co"># Quanteda</span>
-dfm &lt;-<span class="st"> </span><span class="kw">as.dfm</span>(tweet_mat)
-
-res &lt;-<span class="st"> </span><span class="kw">microbenchmark</span>(
-  <span class="dt">klar =</span> <span class="kw">predict</span>(klaR<span class="op">::</span><span class="kw">NaiveBayes</span>(<span class="dt">x=</span>tweets, <span class="dt">grouping =</span> y_var, <span class="dt">fL=</span><span class="dv">1</span>), tweets),
-  <span class="dt">e1071 =</span> <span class="kw">predict</span>(e1071<span class="op">::</span><span class="kw">naiveBayes</span>(tweets, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), tweets),
-  <span class="dt">fastNaiveBayes =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.bernoulli</span>(tweet_mat, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), tweet_mat),
-  <span class="dt">fastNaiveBayes_sparse =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.bernoulli</span>(sparse_tweets, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), sparse_tweets),
-  <span class="dt">bnlearn =</span> <span class="kw">predict</span>(bnlearn<span class="op">::</span><span class="kw">naive.bayes</span>(bn_tweets, <span class="st">'y_var'</span>), bn_tweets),
-  <span class="dt">quanteda =</span> <span class="kw">predict</span>(quanteda<span class="op">::</span><span class="kw">textmodel_nb</span>(dfm, y_var, <span class="dt">prior =</span> <span class="st">&quot;docfreq&quot;</span>, <span class="dt">distribution =</span> <span class="st">&quot;Bernoulli&quot;</span>),
-                     <span class="dt">newdata =</span> dfm),
-  <span class="dt">naivebayes =</span> <span class="kw">predict</span>(naivebayes<span class="op">::</span><span class="kw">naive_bayes</span>(tweets, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), <span class="dt">newdata =</span> tweets),
-  <span class="dt">times =</span> <span class="dv">3</span>,
-  <span class="dt">unit =</span> <span class="st">&quot;ms&quot;</span>
-)
-
-res &lt;-<span class="st"> </span><span class="kw">as.data.table</span>(res)
-res[,nrows<span class="op">:</span><span class="er">=</span><span class="kw">nrow</span>(tweet_mat)]
-res[,ncols<span class="op">:</span><span class="er">=</span><span class="kw">ncol</span>(tweet_mat)]
-res[,model<span class="op">:</span><span class="er">=</span><span class="st">'Bernoulli'</span>]
-
-results &lt;-<span class="st"> </span>res
-
-<span class="co"># Multinomial Event Model</span>
-tweets &lt;-<span class="st"> </span>fastNaiveBayes<span class="op">::</span>tweetsDTM
-
-y_var &lt;-<span class="st"> </span>tweets<span class="op">$</span>airline_sentiment
-y_var &lt;-<span class="st"> </span><span class="kw">as.factor</span>(<span class="kw">ifelse</span>(y_var<span class="op">==</span><span class="st">'negative'</span>,<span class="st">'negative'</span>,<span class="st">'non-negative'</span>))
-tweets &lt;-<span class="st"> </span>tweets[,<span class="dv">2</span><span class="op">:</span><span class="kw">ncol</span>(tweets)]
-
-tweets &lt;-<span class="st"> </span>tweets[,<span class="kw">which</span>(<span class="kw">colSums</span>(tweets)<span class="op">!=</span><span class="dv">0</span>)]
-
-tweet_mat &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(tweets)
-sparse_tweets &lt;-<span class="st"> </span><span class="kw">Matrix</span>(<span class="kw">as.matrix</span>(tweet_mat), <span class="dt">sparse =</span> <span class="ot">TRUE</span>)
-
-<span class="co"># Quanteda</span>
-dfm &lt;-<span class="st"> </span><span class="kw">as.dfm</span>(tweet_mat)
-
-res &lt;-<span class="st"> </span><span class="kw">microbenchmark</span>(
-  <span class="dt">fastNaiveBayes =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.multinomial</span>(tweet_mat, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), tweet_mat),
-  <span class="dt">fastNaiveBayes_sparse =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.multinomial</span>(sparse_tweets, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), sparse_tweets),
-  <span class="dt">quanteda =</span> <span class="kw">predict</span>(quanteda<span class="op">::</span><span class="kw">textmodel_nb</span>(dfm, y_var, <span class="dt">prior =</span> <span class="st">&quot;docfreq&quot;</span>, <span class="dt">distribution =</span> <span class="st">&quot;multinomial&quot;</span>),
-                     <span class="dt">newdata =</span> dfm),
-  <span class="dt">Rfast =</span> Rfast<span class="op">::</span><span class="kw">multinom.nb</span>(tweet_mat, tweet_mat, y_var),
-  <span class="dt">times =</span> <span class="dv">3</span>,
-  <span class="dt">unit =</span> <span class="st">&quot;ms&quot;</span>
-)
-
-res &lt;-<span class="st"> </span><span class="kw">as.data.table</span>(res)
-res[,nrows<span class="op">:</span><span class="er">=</span><span class="kw">nrow</span>(tweet_mat)]
-res[,ncols<span class="op">:</span><span class="er">=</span><span class="kw">ncol</span>(tweet_mat)]
-res[,model<span class="op">:</span><span class="er">=</span><span class="st">'Multinomial'</span>]
-
-results &lt;-<span class="st"> </span><span class="kw">rbind</span>(results, res)
-
-<span class="co"># Gaussian Event Model</span>
-cars &lt;-<span class="st"> </span>mtcars
-<span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">6</span>){
-  cars &lt;-<span class="st"> </span><span class="kw">rbind</span>(cars, cars)
-}
-
-y_var &lt;-<span class="st"> </span>cars<span class="op">$</span>mpg
-y_var &lt;-<span class="st"> </span><span class="kw">as.factor</span>(<span class="kw">ifelse</span>(y_var<span class="op">&gt;</span><span class="dv">20</span>,<span class="st">'negative'</span>,<span class="st">'non-negative'</span>))
-
-cars &lt;-<span class="st"> </span>cars[,<span class="dv">3</span><span class="op">:</span><span class="dv">7</span>]
-<span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">6</span>){
-  cars &lt;-<span class="st"> </span><span class="kw">cbind</span>(cars, cars)
-}
-
-cars_mat &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(cars)
-sparse_cars &lt;-<span class="st"> </span><span class="kw">Matrix</span>(<span class="kw">as.matrix</span>(cars_mat), <span class="dt">sparse =</span> <span class="ot">TRUE</span>)
-
-res &lt;-<span class="st"> </span><span class="kw">microbenchmark</span>(
-  <span class="dt">klar =</span> <span class="kw">predict</span>(klaR<span class="op">::</span><span class="kw">NaiveBayes</span>(<span class="dt">x=</span>cars_mat, <span class="dt">grouping =</span> y_var, <span class="dt">fL=</span><span class="dv">1</span>), cars_mat),
-  <span class="dt">e1071 =</span> <span class="kw">predict</span>(e1071<span class="op">::</span><span class="kw">naiveBayes</span>(cars_mat, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), cars_mat),
-  <span class="dt">naivebayes =</span> <span class="kw">predict</span>(naivebayes<span class="op">::</span><span class="kw">naive_bayes</span>(cars_mat, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), <span class="dt">newdata =</span> cars_mat),
-  <span class="dt">fastNaiveBayes =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.gaussian</span>(cars_mat, y_var), cars_mat),
-  <span class="dt">fastNaiveBayes_sparse =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.gaussian</span>(sparse_cars, y_var), sparse_cars),
-  <span class="dt">Rfast =</span> Rfast<span class="op">::</span><span class="kw">gaussian.nb</span>(cars_mat, cars_mat, y_var),
-  <span class="dt">times =</span> <span class="dv">3</span>,
-  <span class="dt">unit =</span> <span class="st">&quot;ms&quot;</span>
-)
-
-res &lt;-<span class="st"> </span><span class="kw">as.data.table</span>(res)
-res[,nrows<span class="op">:</span><span class="er">=</span><span class="kw">nrow</span>(cars_mat)]
-res[,ncols<span class="op">:</span><span class="er">=</span><span class="kw">ncol</span>(cars_mat)]
-res[,model<span class="op">:</span><span class="er">=</span><span class="st">'Gaussian'</span>]
-
-results &lt;-<span class="st"> </span><span class="kw">rbind</span>(results, res)
-
-<span class="kw">print</span>(results)
-<span class="kw">fwrite</span>(results, <span class="dt">file =</span> <span class="st">&quot;./package_timings.csv&quot;</span>, <span class="dt">row.names =</span> <span class="ot">FALSE</span>)</code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">ls</span>())</a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="co">###################### LIBRARIES ###########################</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">library</span>(tm) <span class="co">#used for text mining </span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">library</span>(e1071) <span class="co">#this package includes the naive Bayes algorithm</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">library</span>(Matrix)</a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">library</span>(microbenchmark)</a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">library</span>(e1071)</a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="kw">library</span>(fastNaiveBayes)</a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="kw">library</span>(quanteda)</a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">library</span>(naivebayes)</a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="kw">library</span>(bnlearn)</a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">library</span>(klaR)</a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">library</span>(data.table)</a>
+<a class="sourceLine" id="cb1-14" title="14"></a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="co">############################ Timing Script ################</span></a>
+<a class="sourceLine" id="cb1-16" title="16">results &lt;-<span class="st"> </span><span class="ot">NULL</span></a>
+<a class="sourceLine" id="cb1-17" title="17"></a>
+<a class="sourceLine" id="cb1-18" title="18"><span class="co"># Bernoulli Event Model</span></a>
+<a class="sourceLine" id="cb1-19" title="19">tweets &lt;-<span class="st"> </span>fastNaiveBayes<span class="op">::</span>tweetsDTM</a>
+<a class="sourceLine" id="cb1-20" title="20"></a>
+<a class="sourceLine" id="cb1-21" title="21"></a>
+<a class="sourceLine" id="cb1-22" title="22">y_var &lt;-<span class="st"> </span>tweets<span class="op">$</span>airline_sentiment</a>
+<a class="sourceLine" id="cb1-23" title="23">y_var &lt;-<span class="st"> </span><span class="kw">as.factor</span>(<span class="kw">ifelse</span>(y_var<span class="op">==</span><span class="st">&#39;negative&#39;</span>,<span class="st">&#39;negative&#39;</span>,<span class="st">&#39;non-negative&#39;</span>))</a>
+<a class="sourceLine" id="cb1-24" title="24">tweets &lt;-<span class="st"> </span>tweets[,<span class="dv">2</span><span class="op">:</span><span class="kw">ncol</span>(tweets)]</a>
+<a class="sourceLine" id="cb1-25" title="25">tweets[tweets<span class="op">&gt;</span><span class="dv">1</span>] &lt;-<span class="st"> </span><span class="dv">1</span></a>
+<a class="sourceLine" id="cb1-26" title="26"></a>
+<a class="sourceLine" id="cb1-27" title="27">tweets &lt;-<span class="st"> </span>tweets[,<span class="kw">which</span>(<span class="kw">colSums</span>(tweets)<span class="op">!=</span><span class="dv">0</span>)]</a>
+<a class="sourceLine" id="cb1-28" title="28">tweets &lt;-<span class="st"> </span>tweets[,<span class="kw">which</span>(<span class="kw">colSums</span>(tweets)<span class="op">!=</span><span class="kw">nrow</span>(tweets))]</a>
+<a class="sourceLine" id="cb1-29" title="29"></a>
+<a class="sourceLine" id="cb1-30" title="30">tweet_mat &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(tweets)</a>
+<a class="sourceLine" id="cb1-31" title="31">sparse_tweets &lt;-<span class="st"> </span><span class="kw">Matrix</span>(<span class="kw">as.matrix</span>(tweet_mat), <span class="dt">sparse =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb1-32" title="32"></a>
+<a class="sourceLine" id="cb1-33" title="33"><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncol</span>(tweets)){</a>
+<a class="sourceLine" id="cb1-34" title="34">  tweets[[i]] &lt;-<span class="st"> </span><span class="kw">as.factor</span>(tweets[[i]])</a>
+<a class="sourceLine" id="cb1-35" title="35">}</a>
+<a class="sourceLine" id="cb1-36" title="36"></a>
+<a class="sourceLine" id="cb1-37" title="37"><span class="co"># BNLearn</span></a>
+<a class="sourceLine" id="cb1-38" title="38">bn_tweets &lt;-<span class="st"> </span><span class="kw">cbind</span>(y_var, tweets)</a>
+<a class="sourceLine" id="cb1-39" title="39"><span class="kw">colnames</span>(bn_tweets)[<span class="dv">1</span>] &lt;-<span class="st"> &#39;y_var&#39;</span></a>
+<a class="sourceLine" id="cb1-40" title="40"></a>
+<a class="sourceLine" id="cb1-41" title="41"><span class="co"># Quanteda</span></a>
+<a class="sourceLine" id="cb1-42" title="42">dfm &lt;-<span class="st"> </span><span class="kw">as.dfm</span>(tweet_mat)</a>
+<a class="sourceLine" id="cb1-43" title="43"></a>
+<a class="sourceLine" id="cb1-44" title="44">res &lt;-<span class="st"> </span><span class="kw">microbenchmark</span>(</a>
+<a class="sourceLine" id="cb1-45" title="45">  <span class="dt">klar =</span> <span class="kw">predict</span>(klaR<span class="op">::</span><span class="kw">NaiveBayes</span>(<span class="dt">x=</span>tweets, <span class="dt">grouping =</span> y_var, <span class="dt">fL=</span><span class="dv">1</span>), tweets),</a>
+<a class="sourceLine" id="cb1-46" title="46">  <span class="dt">e1071 =</span> <span class="kw">predict</span>(e1071<span class="op">::</span><span class="kw">naiveBayes</span>(tweets, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), tweets),</a>
+<a class="sourceLine" id="cb1-47" title="47">  <span class="dt">fastNaiveBayes =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.bernoulli</span>(tweet_mat, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), tweet_mat),</a>
+<a class="sourceLine" id="cb1-48" title="48">  <span class="dt">fastNaiveBayes_sparse =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.bernoulli</span>(sparse_tweets, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), sparse_tweets),</a>
+<a class="sourceLine" id="cb1-49" title="49">  <span class="dt">bnlearn =</span> <span class="kw">predict</span>(bnlearn<span class="op">::</span><span class="kw">naive.bayes</span>(bn_tweets, <span class="st">&#39;y_var&#39;</span>), bn_tweets),</a>
+<a class="sourceLine" id="cb1-50" title="50">  <span class="dt">quanteda =</span> <span class="kw">predict</span>(quanteda<span class="op">::</span><span class="kw">textmodel_nb</span>(dfm, y_var, <span class="dt">prior =</span> <span class="st">&quot;docfreq&quot;</span>, <span class="dt">distribution =</span> <span class="st">&quot;Bernoulli&quot;</span>),</a>
+<a class="sourceLine" id="cb1-51" title="51">                     <span class="dt">newdata =</span> dfm),</a>
+<a class="sourceLine" id="cb1-52" title="52">  <span class="dt">naivebayes =</span> <span class="kw">predict</span>(naivebayes<span class="op">::</span><span class="kw">naive_bayes</span>(tweets, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), <span class="dt">newdata =</span> tweets),</a>
+<a class="sourceLine" id="cb1-53" title="53">  <span class="dt">times =</span> <span class="dv">3</span>,</a>
+<a class="sourceLine" id="cb1-54" title="54">  <span class="dt">unit =</span> <span class="st">&quot;ms&quot;</span></a>
+<a class="sourceLine" id="cb1-55" title="55">)</a>
+<a class="sourceLine" id="cb1-56" title="56"></a>
+<a class="sourceLine" id="cb1-57" title="57">res &lt;-<span class="st"> </span><span class="kw">as.data.table</span>(res)</a>
+<a class="sourceLine" id="cb1-58" title="58">res[,nrows<span class="op">:</span><span class="er">=</span><span class="kw">nrow</span>(tweet_mat)]</a>
+<a class="sourceLine" id="cb1-59" title="59">res[,ncols<span class="op">:</span><span class="er">=</span><span class="kw">ncol</span>(tweet_mat)]</a>
+<a class="sourceLine" id="cb1-60" title="60">res[,model<span class="op">:</span><span class="er">=</span><span class="st">&#39;Bernoulli&#39;</span>]</a>
+<a class="sourceLine" id="cb1-61" title="61"></a>
+<a class="sourceLine" id="cb1-62" title="62">results &lt;-<span class="st"> </span>res</a>
+<a class="sourceLine" id="cb1-63" title="63"></a>
+<a class="sourceLine" id="cb1-64" title="64"><span class="co"># Multinomial Event Model</span></a>
+<a class="sourceLine" id="cb1-65" title="65">tweets &lt;-<span class="st"> </span>fastNaiveBayes<span class="op">::</span>tweetsDTM</a>
+<a class="sourceLine" id="cb1-66" title="66"></a>
+<a class="sourceLine" id="cb1-67" title="67">y_var &lt;-<span class="st"> </span>tweets<span class="op">$</span>airline_sentiment</a>
+<a class="sourceLine" id="cb1-68" title="68">y_var &lt;-<span class="st"> </span><span class="kw">as.factor</span>(<span class="kw">ifelse</span>(y_var<span class="op">==</span><span class="st">&#39;negative&#39;</span>,<span class="st">&#39;negative&#39;</span>,<span class="st">&#39;non-negative&#39;</span>))</a>
+<a class="sourceLine" id="cb1-69" title="69">tweets &lt;-<span class="st"> </span>tweets[,<span class="dv">2</span><span class="op">:</span><span class="kw">ncol</span>(tweets)]</a>
+<a class="sourceLine" id="cb1-70" title="70"></a>
+<a class="sourceLine" id="cb1-71" title="71">tweets &lt;-<span class="st"> </span>tweets[,<span class="kw">which</span>(<span class="kw">colSums</span>(tweets)<span class="op">!=</span><span class="dv">0</span>)]</a>
+<a class="sourceLine" id="cb1-72" title="72"></a>
+<a class="sourceLine" id="cb1-73" title="73">tweet_mat &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(tweets)</a>
+<a class="sourceLine" id="cb1-74" title="74">sparse_tweets &lt;-<span class="st"> </span><span class="kw">Matrix</span>(<span class="kw">as.matrix</span>(tweet_mat), <span class="dt">sparse =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb1-75" title="75"></a>
+<a class="sourceLine" id="cb1-76" title="76"><span class="co"># Quanteda</span></a>
+<a class="sourceLine" id="cb1-77" title="77">dfm &lt;-<span class="st"> </span><span class="kw">as.dfm</span>(tweet_mat)</a>
+<a class="sourceLine" id="cb1-78" title="78"></a>
+<a class="sourceLine" id="cb1-79" title="79">res &lt;-<span class="st"> </span><span class="kw">microbenchmark</span>(</a>
+<a class="sourceLine" id="cb1-80" title="80">  <span class="dt">fastNaiveBayes =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.multinomial</span>(tweet_mat, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), tweet_mat),</a>
+<a class="sourceLine" id="cb1-81" title="81">  <span class="dt">fastNaiveBayes_sparse =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.multinomial</span>(sparse_tweets, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), sparse_tweets),</a>
+<a class="sourceLine" id="cb1-82" title="82">  <span class="dt">quanteda =</span> <span class="kw">predict</span>(quanteda<span class="op">::</span><span class="kw">textmodel_nb</span>(dfm, y_var, <span class="dt">prior =</span> <span class="st">&quot;docfreq&quot;</span>, <span class="dt">distribution =</span> <span class="st">&quot;multinomial&quot;</span>),</a>
+<a class="sourceLine" id="cb1-83" title="83">                     <span class="dt">newdata =</span> dfm),</a>
+<a class="sourceLine" id="cb1-84" title="84">  <span class="dt">Rfast =</span> Rfast<span class="op">::</span><span class="kw">multinom.nb</span>(tweet_mat, tweet_mat, y_var),</a>
+<a class="sourceLine" id="cb1-85" title="85">  <span class="dt">times =</span> <span class="dv">3</span>,</a>
+<a class="sourceLine" id="cb1-86" title="86">  <span class="dt">unit =</span> <span class="st">&quot;ms&quot;</span></a>
+<a class="sourceLine" id="cb1-87" title="87">)</a>
+<a class="sourceLine" id="cb1-88" title="88"></a>
+<a class="sourceLine" id="cb1-89" title="89">res &lt;-<span class="st"> </span><span class="kw">as.data.table</span>(res)</a>
+<a class="sourceLine" id="cb1-90" title="90">res[,nrows<span class="op">:</span><span class="er">=</span><span class="kw">nrow</span>(tweet_mat)]</a>
+<a class="sourceLine" id="cb1-91" title="91">res[,ncols<span class="op">:</span><span class="er">=</span><span class="kw">ncol</span>(tweet_mat)]</a>
+<a class="sourceLine" id="cb1-92" title="92">res[,model<span class="op">:</span><span class="er">=</span><span class="st">&#39;Multinomial&#39;</span>]</a>
+<a class="sourceLine" id="cb1-93" title="93"></a>
+<a class="sourceLine" id="cb1-94" title="94">results &lt;-<span class="st"> </span><span class="kw">rbind</span>(results, res)</a>
+<a class="sourceLine" id="cb1-95" title="95"></a>
+<a class="sourceLine" id="cb1-96" title="96"><span class="co"># Gaussian Event Model</span></a>
+<a class="sourceLine" id="cb1-97" title="97">cars &lt;-<span class="st"> </span>mtcars</a>
+<a class="sourceLine" id="cb1-98" title="98"><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">6</span>){</a>
+<a class="sourceLine" id="cb1-99" title="99">  cars &lt;-<span class="st"> </span><span class="kw">rbind</span>(cars, cars)</a>
+<a class="sourceLine" id="cb1-100" title="100">}</a>
+<a class="sourceLine" id="cb1-101" title="101"></a>
+<a class="sourceLine" id="cb1-102" title="102">y_var &lt;-<span class="st"> </span>cars<span class="op">$</span>mpg</a>
+<a class="sourceLine" id="cb1-103" title="103">y_var &lt;-<span class="st"> </span><span class="kw">as.factor</span>(<span class="kw">ifelse</span>(y_var<span class="op">&gt;</span><span class="dv">20</span>,<span class="st">&#39;negative&#39;</span>,<span class="st">&#39;non-negative&#39;</span>))</a>
+<a class="sourceLine" id="cb1-104" title="104"></a>
+<a class="sourceLine" id="cb1-105" title="105">cars &lt;-<span class="st"> </span>cars[,<span class="dv">3</span><span class="op">:</span><span class="dv">7</span>]</a>
+<a class="sourceLine" id="cb1-106" title="106"><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="dv">6</span>){</a>
+<a class="sourceLine" id="cb1-107" title="107">  cars &lt;-<span class="st"> </span><span class="kw">cbind</span>(cars, cars)</a>
+<a class="sourceLine" id="cb1-108" title="108">}</a>
+<a class="sourceLine" id="cb1-109" title="109"></a>
+<a class="sourceLine" id="cb1-110" title="110">cars_mat &lt;-<span class="st"> </span><span class="kw">as.matrix</span>(cars)</a>
+<a class="sourceLine" id="cb1-111" title="111">sparse_cars &lt;-<span class="st"> </span><span class="kw">Matrix</span>(<span class="kw">as.matrix</span>(cars_mat), <span class="dt">sparse =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb1-112" title="112"></a>
+<a class="sourceLine" id="cb1-113" title="113">res &lt;-<span class="st"> </span><span class="kw">microbenchmark</span>(</a>
+<a class="sourceLine" id="cb1-114" title="114">  <span class="dt">klar =</span> <span class="kw">predict</span>(klaR<span class="op">::</span><span class="kw">NaiveBayes</span>(<span class="dt">x=</span>cars_mat, <span class="dt">grouping =</span> y_var, <span class="dt">fL=</span><span class="dv">1</span>), cars_mat),</a>
+<a class="sourceLine" id="cb1-115" title="115">  <span class="dt">e1071 =</span> <span class="kw">predict</span>(e1071<span class="op">::</span><span class="kw">naiveBayes</span>(cars_mat, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), cars_mat),</a>
+<a class="sourceLine" id="cb1-116" title="116">  <span class="dt">naivebayes =</span> <span class="kw">predict</span>(naivebayes<span class="op">::</span><span class="kw">naive_bayes</span>(cars_mat, y_var, <span class="dt">laplace =</span> <span class="dv">1</span>), <span class="dt">newdata =</span> cars_mat),</a>
+<a class="sourceLine" id="cb1-117" title="117">  <span class="dt">fastNaiveBayes =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.gaussian</span>(cars_mat, y_var), cars_mat),</a>
+<a class="sourceLine" id="cb1-118" title="118">  <span class="dt">fastNaiveBayes_sparse =</span> <span class="kw">predict</span>(<span class="kw">fastNaiveBayes.gaussian</span>(sparse_cars, y_var), sparse_cars),</a>
+<a class="sourceLine" id="cb1-119" title="119">  <span class="dt">Rfast =</span> Rfast<span class="op">::</span><span class="kw">gaussian.nb</span>(cars_mat, cars_mat, y_var),</a>
+<a class="sourceLine" id="cb1-120" title="120">  <span class="dt">times =</span> <span class="dv">3</span>,</a>
+<a class="sourceLine" id="cb1-121" title="121">  <span class="dt">unit =</span> <span class="st">&quot;ms&quot;</span></a>
+<a class="sourceLine" id="cb1-122" title="122">)</a>
+<a class="sourceLine" id="cb1-123" title="123"></a>
+<a class="sourceLine" id="cb1-124" title="124">res &lt;-<span class="st"> </span><span class="kw">as.data.table</span>(res)</a>
+<a class="sourceLine" id="cb1-125" title="125">res[,nrows<span class="op">:</span><span class="er">=</span><span class="kw">nrow</span>(cars_mat)]</a>
+<a class="sourceLine" id="cb1-126" title="126">res[,ncols<span class="op">:</span><span class="er">=</span><span class="kw">ncol</span>(cars_mat)]</a>
+<a class="sourceLine" id="cb1-127" title="127">res[,model<span class="op">:</span><span class="er">=</span><span class="st">&#39;Gaussian&#39;</span>]</a>
+<a class="sourceLine" id="cb1-128" title="128"></a>
+<a class="sourceLine" id="cb1-129" title="129">results &lt;-<span class="st"> </span><span class="kw">rbind</span>(results, res)</a>
+<a class="sourceLine" id="cb1-130" title="130"></a>
+<a class="sourceLine" id="cb1-131" title="131"><span class="kw">print</span>(results)</a>
+<a class="sourceLine" id="cb1-132" title="132"><span class="kw">fwrite</span>(results, <span class="dt">file =</span> <span class="st">&quot;./package_timings.csv&quot;</span>, <span class="dt">row.names =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 </div>
 </div>
 <div id="examples" class="section level2">
 <h2>Examples</h2>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">ls</span>())
-<span class="kw">library</span>(fastNaiveBayes)
-
-cars &lt;-<span class="st"> </span>mtcars
-y &lt;-<span class="st"> </span><span class="kw">as.factor</span>(<span class="kw">ifelse</span>(cars<span class="op">$</span>mpg<span class="op">&gt;</span><span class="dv">25</span>,<span class="st">'High'</span>,<span class="st">'Low'</span>))
-x &lt;-<span class="st"> </span>cars[,<span class="dv">2</span><span class="op">:</span><span class="kw">ncol</span>(cars)]
-
-<span class="co"># Mixed event models</span>
-dist &lt;-<span class="st"> </span>fastNaiveBayes<span class="op">::</span><span class="kw">fastNaiveBayes.detect_distribution</span>(x, <span class="dt">nrows =</span> <span class="kw">nrow</span>(x))
-<span class="kw">print</span>(dist)
-mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.mixed</span>(x,y,<span class="dt">laplace =</span> <span class="dv">1</span>)
-pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> x)
-<span class="kw">mean</span>(pred<span class="op">!=</span>y)
-
-<span class="co"># Bernoulli only</span>
-vars &lt;-<span class="st"> </span><span class="kw">c</span>(dist<span class="op">$</span>bernoulli, dist<span class="op">$</span>multinomial)
-newx &lt;-<span class="st"> </span>x[,vars]
-<span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncol</span>(newx)){
- newx[[i]] &lt;-<span class="st"> </span><span class="kw">as.factor</span>(newx[[i]])
-}
-new_mat &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(y <span class="op">~</span><span class="st"> </span>. <span class="op">-</span><span class="dv">1</span>, <span class="kw">cbind</span>(y,newx))
-mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.bernoulli</span>(new_mat, y, <span class="dt">laplace =</span> <span class="dv">1</span>)
-pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> new_mat)
-<span class="kw">mean</span>(pred<span class="op">!=</span>y)
-
-<span class="co"># Construction sparse Matrix:</span>
-mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.bernoulli</span>(new_mat, y, <span class="dt">laplace =</span> <span class="dv">1</span>, <span class="dt">sparse =</span> <span class="ot">TRUE</span>)
-pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> new_mat)
-<span class="kw">mean</span>(pred<span class="op">!=</span>y)
-
-<span class="co"># OR:</span>
-new_mat &lt;-<span class="st"> </span>Matrix<span class="op">::</span><span class="kw">Matrix</span>(<span class="kw">as.matrix</span>(new_mat), <span class="dt">sparse =</span> <span class="ot">TRUE</span>)
-mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.bernoulli</span>(new_mat, y, <span class="dt">laplace =</span> <span class="dv">1</span>)
-pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> new_mat)
-<span class="kw">mean</span>(pred<span class="op">!=</span>y)
-
-<span class="co"># Multinomial only</span>
-vars &lt;-<span class="st"> </span><span class="kw">c</span>(dist<span class="op">$</span>bernoulli, dist<span class="op">$</span>multinomial)
-newx &lt;-<span class="st"> </span>x[,vars]
-mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.multinomial</span>(newx, y, <span class="dt">laplace =</span> <span class="dv">1</span>)
-pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> newx)
-<span class="kw">mean</span>(pred<span class="op">!=</span>y)
-
-<span class="co"># Gaussian only</span>
-vars &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">'hp'</span>, dist<span class="op">$</span>gaussian)
-newx &lt;-<span class="st"> </span>x[,vars]
-mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.gaussian</span>(newx, y)
-pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> newx)
-<span class="kw">mean</span>(pred<span class="op">!=</span>y)</code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">ls</span>())</a>
+<a class="sourceLine" id="cb2-2" title="2"><span class="kw">library</span>(fastNaiveBayes)</a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4">cars &lt;-<span class="st"> </span>mtcars</a>
+<a class="sourceLine" id="cb2-5" title="5">y &lt;-<span class="st"> </span><span class="kw">as.factor</span>(<span class="kw">ifelse</span>(cars<span class="op">$</span>mpg<span class="op">&gt;</span><span class="dv">25</span>,<span class="st">&#39;High&#39;</span>,<span class="st">&#39;Low&#39;</span>))</a>
+<a class="sourceLine" id="cb2-6" title="6">x &lt;-<span class="st"> </span>cars[,<span class="dv">2</span><span class="op">:</span><span class="kw">ncol</span>(cars)]</a>
+<a class="sourceLine" id="cb2-7" title="7"></a>
+<a class="sourceLine" id="cb2-8" title="8"><span class="co"># Mixed event models</span></a>
+<a class="sourceLine" id="cb2-9" title="9">dist &lt;-<span class="st"> </span>fastNaiveBayes<span class="op">::</span><span class="kw">fastNaiveBayes.detect_distribution</span>(x, <span class="dt">nrows =</span> <span class="kw">nrow</span>(x))</a>
+<a class="sourceLine" id="cb2-10" title="10"><span class="kw">print</span>(dist)</a>
+<a class="sourceLine" id="cb2-11" title="11">mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.mixed</span>(x,y,<span class="dt">laplace =</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-12" title="12">pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> x)</a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="kw">mean</span>(pred<span class="op">!=</span>y)</a>
+<a class="sourceLine" id="cb2-14" title="14"></a>
+<a class="sourceLine" id="cb2-15" title="15"><span class="co"># Bernoulli only</span></a>
+<a class="sourceLine" id="cb2-16" title="16">vars &lt;-<span class="st"> </span><span class="kw">c</span>(dist<span class="op">$</span>bernoulli, dist<span class="op">$</span>multinomial)</a>
+<a class="sourceLine" id="cb2-17" title="17">newx &lt;-<span class="st"> </span>x[,vars]</a>
+<a class="sourceLine" id="cb2-18" title="18"><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw">ncol</span>(newx)){</a>
+<a class="sourceLine" id="cb2-19" title="19"> newx[[i]] &lt;-<span class="st"> </span><span class="kw">as.factor</span>(newx[[i]])</a>
+<a class="sourceLine" id="cb2-20" title="20">}</a>
+<a class="sourceLine" id="cb2-21" title="21">new_mat &lt;-<span class="st"> </span><span class="kw">model.matrix</span>(y <span class="op">~</span><span class="st"> </span>. <span class="dv">-1</span>, <span class="kw">cbind</span>(y,newx))</a>
+<a class="sourceLine" id="cb2-22" title="22">mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.bernoulli</span>(new_mat, y, <span class="dt">laplace =</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-23" title="23">pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> new_mat)</a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="kw">mean</span>(pred<span class="op">!=</span>y)</a>
+<a class="sourceLine" id="cb2-25" title="25"></a>
+<a class="sourceLine" id="cb2-26" title="26"><span class="co"># Construction sparse Matrix:</span></a>
+<a class="sourceLine" id="cb2-27" title="27">mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.bernoulli</span>(new_mat, y, <span class="dt">laplace =</span> <span class="dv">1</span>, <span class="dt">sparse =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb2-28" title="28">pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> new_mat)</a>
+<a class="sourceLine" id="cb2-29" title="29"><span class="kw">mean</span>(pred<span class="op">!=</span>y)</a>
+<a class="sourceLine" id="cb2-30" title="30"></a>
+<a class="sourceLine" id="cb2-31" title="31"><span class="co"># OR:</span></a>
+<a class="sourceLine" id="cb2-32" title="32">new_mat &lt;-<span class="st"> </span>Matrix<span class="op">::</span><span class="kw">Matrix</span>(<span class="kw">as.matrix</span>(new_mat), <span class="dt">sparse =</span> <span class="ot">TRUE</span>)</a>
+<a class="sourceLine" id="cb2-33" title="33">mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.bernoulli</span>(new_mat, y, <span class="dt">laplace =</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-34" title="34">pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> new_mat)</a>
+<a class="sourceLine" id="cb2-35" title="35"><span class="kw">mean</span>(pred<span class="op">!=</span>y)</a>
+<a class="sourceLine" id="cb2-36" title="36"></a>
+<a class="sourceLine" id="cb2-37" title="37"><span class="co"># Multinomial only</span></a>
+<a class="sourceLine" id="cb2-38" title="38">vars &lt;-<span class="st"> </span><span class="kw">c</span>(dist<span class="op">$</span>bernoulli, dist<span class="op">$</span>multinomial)</a>
+<a class="sourceLine" id="cb2-39" title="39">newx &lt;-<span class="st"> </span>x[,vars]</a>
+<a class="sourceLine" id="cb2-40" title="40">mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.multinomial</span>(newx, y, <span class="dt">laplace =</span> <span class="dv">1</span>)</a>
+<a class="sourceLine" id="cb2-41" title="41">pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> newx)</a>
+<a class="sourceLine" id="cb2-42" title="42"><span class="kw">mean</span>(pred<span class="op">!=</span>y)</a>
+<a class="sourceLine" id="cb2-43" title="43"></a>
+<a class="sourceLine" id="cb2-44" title="44"><span class="co"># Gaussian only</span></a>
+<a class="sourceLine" id="cb2-45" title="45">vars &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&#39;hp&#39;</span>, dist<span class="op">$</span>gaussian)</a>
+<a class="sourceLine" id="cb2-46" title="46">newx &lt;-<span class="st"> </span>x[,vars]</a>
+<a class="sourceLine" id="cb2-47" title="47">mod &lt;-<span class="st"> </span><span class="kw">fastNaiveBayes.gaussian</span>(newx, y)</a>
+<a class="sourceLine" id="cb2-48" title="48">pred &lt;-<span class="st"> </span><span class="kw">predict</span>(mod, <span class="dt">newdata =</span> newx)</a>
+<a class="sourceLine" id="cb2-49" title="49"><span class="kw">mean</span>(pred<span class="op">!=</span>y)</a></code></pre></div>
 </div>
 <div id="references" class="section level2">
 <h2>References</h2>
 <p>Hu, X., &amp; Liu, H. (2012). Text analytics in social media. In Mining text data (pp. 385-414). Springer, Boston, MA.</p>
-<p>McCallum, A., &amp; Nigam, K. (1998, July). A comparison of event models for naive bayes text classification. In AAAI-98 workshop on learning for text categorization (Vol. 752, No. 1, pp. 41-48).</p>
+<p>McCallum, A., &amp; Nigam, K. (1998, July). A comparison of event models for naive bayes text classification. In AAAI-98 workshop on learning for text categorization (Vol. 752, No. 1, pp. 41-48).</p>
 <p>Schneider, K. M. (2003, April). A comparison of event models for Naive Bayes anti-spam e-mail filtering. In Proceedings of the tenth conference on European chapter of the Association for Computational Linguistics-Volume 1 (pp. 307-314). Association for Computational Linguistics.</p>
 </div>
 
+
+
+<!-- code folding -->
 
 
 <!-- dynamically load mathjax for compatibility with self-contained -->

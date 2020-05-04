@@ -1,10 +1,10 @@
-## ----setup, include = FALSE----------------------------------------------
+## ----setup, include = FALSE---------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
-## ----eval=FALSE----------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  rm(list=ls())
 #  ###################### LIBRARIES ###########################
 #  library(tm) #used for text mining
@@ -138,7 +138,7 @@ knitr::opts_chunk$set(
 #  print(results)
 #  fwrite(results, file = "./package_timings.csv", row.names = FALSE)
 
-## ----eval=FALSE----------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  rm(list=ls())
 #  library(fastNaiveBayes)
 #  
